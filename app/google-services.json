@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "818127559467",
+    "project_id": "talkzy-67089",
+    "storage_bucket": "talkzy-67089.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:818127559467:android:acf6de294e9e60ed88836e",
+        "android_client_info": {
+          "package_name": "com.devvikram.talkzy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDaF9OaQZ_X5Y2NSLmC0wWEvDR73Y-B9_Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
