@@ -2,8 +2,106 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "3cb8de7ab1a768de07021023f353c11f",
+    "identityHash": "b949e22c856e73443305d33ac328addd",
     "entities": [
+      {
+        "tableName": "contacts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`localContactId` INTEGER PRIMARY KEY AUTOINCREMENT, `userId` TEXT NOT NULL, `name` TEXT NOT NULL, `email` TEXT NOT NULL, `mobileNumber` TEXT NOT NULL, `profilePicture` TEXT NOT NULL, `localProfilePicturePath` TEXT NOT NULL, `conversationId` TEXT NOT NULL, `contactType` TEXT NOT NULL, `isOnline` INTEGER NOT NULL, `lastSeen` INTEGER NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `lastModifiedAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "localContactId",
+            "columnName": "localContactId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileNumber",
+            "columnName": "mobileNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profilePicture",
+            "columnName": "profilePicture",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localProfilePicturePath",
+            "columnName": "localProfilePicturePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "conversationId",
+            "columnName": "conversationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contactType",
+            "columnName": "contactType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isOnline",
+            "columnName": "isOnline",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSeen",
+            "columnName": "lastSeen",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModifiedAt",
+            "columnName": "lastModifiedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "localContactId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
       {
         "tableName": "conversations",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`conversationId` TEXT NOT NULL, `userId` TEXT NOT NULL, `type` TEXT NOT NULL, `groupType` TEXT, `name` TEXT, `createdBy` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `description` TEXT, `participantIds` TEXT NOT NULL, `lastModifiedAt` INTEGER NOT NULL, PRIMARY KEY(`conversationId`))",
@@ -120,7 +218,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3cb8de7ab1a768de07021023f353c11f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b949e22c856e73443305d33ac328addd')"
     ]
   }
 }

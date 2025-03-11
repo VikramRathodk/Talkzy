@@ -4,7 +4,12 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.room.Room
 import com.devvikram.talkzy.config.constants.App
+import com.devvikram.talkzy.config.constants.LoginPreference
 import com.devvikram.talkzy.data.room.AppDatabase
+import com.devvikram.talkzy.data.room.dao.ContactsDao
+import com.devvikram.talkzy.data.room.dao.ConversationDao
+import com.devvikram.talkzy.data.room.repository.ContactRepository
+import com.devvikram.talkzy.data.room.repository.ConversationRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
@@ -40,10 +45,25 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun sharedPreference(@ApplicationContext context: Context): SharedPreferences = context.getSharedPreferences(
-        App.USER_PREFERENCES_NAME,
-        Context.MODE_PRIVATE
-    )
+    fun provideConversationRepository(conversationDao: ConversationDao) = ConversationRepository(conversationDao)
 
+    @Provides
+    @Singleton
+    fun provideContactsDao(db: AppDatabase) = db.contactsDao()
+
+    @Provides
+    @Singleton
+    fun provideContactRepository(contactsDao: ContactsDao) = ContactRepository(contactsDao)
+
+//    @Provides
+//    @Singleton
+//    fun provideParticipantDao(db: AppDatabase) = db.participantDao()
+
+
+    @Provides
+    @Singleton
+    fun provideLoginPreference(@ApplicationContext context: Context): LoginPreference {
+        return LoginPreference(context)
+    }
 
 }
