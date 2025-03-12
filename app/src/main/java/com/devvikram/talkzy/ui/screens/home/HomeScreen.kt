@@ -2,6 +2,7 @@ package com.devvikram.talkzy.ui.screens.home
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
@@ -62,7 +63,7 @@ fun HomeScreen(
             if (isHomeToolbarVisibleFlow) {
                 FloatingActionButton(
                     onClick = {
-                        homeNavigationController.navigate(HomeNavigationDestination.ContactsDest)
+                        homeNavigationController.navigate(HomeNavigationDestination.ContactsDest.route)
                     }
                 ) {
                     Icon(
@@ -75,6 +76,7 @@ fun HomeScreen(
     ) {
         NavHost(
             modifier = Modifier
+                .fillMaxWidth()
                 .padding(it),
             navController = homeNavigationController,
             startDestination = HomeNavigationDestination.ConversationDest.route
