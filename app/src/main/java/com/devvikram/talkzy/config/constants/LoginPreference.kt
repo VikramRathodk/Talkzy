@@ -1,13 +1,14 @@
 package com.devvikram.talkzy.config.constants
 
 import android.content.Context
+import androidx.core.content.edit
 
 class LoginPreference(private val context: Context) {
     private val sharedPreferences =
         context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
     fun setUserId(userId: String) {
-        sharedPreferences.edit().putString(USER_ID, userId).apply()
+        sharedPreferences.edit() { putString(USER_ID, userId) }
     }
 
     fun getUserId(): String {
@@ -15,7 +16,7 @@ class LoginPreference(private val context: Context) {
     }
 
     fun setUserName(userName: String) {
-        sharedPreferences.edit().putString(USER_NAME, userName).apply()
+        sharedPreferences.edit() { putString(USER_NAME, userName) }
     }
 
     fun getUserName(): String? {
@@ -23,7 +24,7 @@ class LoginPreference(private val context: Context) {
     }
 
     fun setUserEmail(userEmail: String) {
-        sharedPreferences.edit().putString(USER_EMAIL, userEmail).apply()
+        sharedPreferences.edit() { putString(USER_EMAIL, userEmail) }
     }
 
     fun getUserEmail(): String? {
@@ -31,7 +32,7 @@ class LoginPreference(private val context: Context) {
     }
 
     fun setSessionId(sessionId: String) {
-        sharedPreferences.edit().putString(SESSION_ID, sessionId).apply()
+        sharedPreferences.edit() { putString(SESSION_ID, sessionId) }
     }
 
     fun getSessionId(): String? {
@@ -39,7 +40,7 @@ class LoginPreference(private val context: Context) {
     }
 
     fun setDeviceId(deviceId: String) {
-        sharedPreferences.edit().putString(DEVICE_ID, deviceId).apply()
+        sharedPreferences.edit() { putString(DEVICE_ID, deviceId) }
     }
 
     fun getDeviceId(): String? {
@@ -48,7 +49,7 @@ class LoginPreference(private val context: Context) {
     }
 
     fun setFcmToken(fcmToken: String) {
-        sharedPreferences.edit().putString(FCM_TOKEN, fcmToken).apply()
+        sharedPreferences.edit() { putString(FCM_TOKEN, fcmToken) }
     }
 
     fun getFcmToken(): String? {
@@ -57,12 +58,20 @@ class LoginPreference(private val context: Context) {
 
 
     fun setLoggedIn(isLoggedIn: Boolean) {
-        sharedPreferences.edit().putBoolean(IS_LOGGED_IN, isLoggedIn).apply()
+        sharedPreferences.edit() { putBoolean(IS_LOGGED_IN, isLoggedIn) }
     }
 
     fun isLoggedIn(): Boolean {
         return sharedPreferences.getBoolean(IS_LOGGED_IN, false)
     }
+
+    fun setOnBoardingCompleted(isOnBoardingCompleted: Boolean) {
+        sharedPreferences.edit() { putBoolean(IS_ONBOARD_COMPLETED, isOnBoardingCompleted) }
+    }
+    fun isOnBoardingCompleted(): Boolean? {
+        return sharedPreferences.getBoolean(IS_ONBOARD_COMPLETED, false)
+    }
+
 
     companion object {
         const val PREFERENCES_NAME = "LOGIN_PREFERENCES"
@@ -73,6 +82,7 @@ class LoginPreference(private val context: Context) {
         private const val SESSION_ID = "SESSION_ID"
         private const val DEVICE_ID = "DEVICE_ID"
         private const val FCM_TOKEN = "FCM_TOKEN"
+        private const val IS_ONBOARD_COMPLETED = "IS_ONBOARD_COMPLETED"
 
     }
 }

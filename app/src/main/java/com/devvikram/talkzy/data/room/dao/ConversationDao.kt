@@ -4,16 +4,17 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.devvikram.talkzy.data.room.models.RoomConversation
 
 
 @Dao
 interface ConversationDao  {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertConversation(roomConversation: RoomConversation)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertConversations(roomConversations: List<RoomConversation>)
 
     @Query("SELECT * FROM conversations WHERE conversationId = :conversationId")

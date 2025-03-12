@@ -74,6 +74,7 @@ dependencies {
 
     //room
     implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.runtime.livedata)
 
     annotationProcessor(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
@@ -100,6 +101,10 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
+
+
+    // navigation
+    implementation(libs.androidx.navigation.compose)
 
 
 

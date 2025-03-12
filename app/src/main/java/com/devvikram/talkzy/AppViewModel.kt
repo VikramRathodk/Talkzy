@@ -1,6 +1,8 @@
 package com.devvikram.talkzy
 
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.devvikram.talkzy.config.ModelMapper
@@ -21,7 +23,7 @@ class AppViewModel @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val conversationRepository: ConversationRepository,
     private val contactRepository: ContactRepository,
-    private val loginPreference: LoginPreference
+    val loginPreference: LoginPreference
 ) :  ViewModel() {
 
 
@@ -30,8 +32,21 @@ class AppViewModel @Inject constructor(
 
     }
 
-    private var contactListenerRegistration: ListenerRegistration? = null
+
     private var conversationListenerRegistration: ListenerRegistration? = null
+    private var contactListenerRegistration: ListenerRegistration? = null
+
+    val _isLoggedIn = MutableLiveData(false)
+    val isLoggedIn: LiveData<Boolean> = _isLoggedIn
+
+    val _isOnBoardingCompleted = MutableLiveData(false)
+    val isOnBoardingCompleted: LiveData<Boolean> = _isOnBoardingCompleted
+
+    init {
+        _isLoggedIn.value = loginPreference.isLoggedIn()
+        _isOnBoardingCompleted.value = loginPreference.isOnBoardingCompleted()
+    }
+
 
     fun listenToContacts() {
         println("Listening to contacts")
@@ -43,6 +58,8 @@ class AppViewModel @Inject constructor(
                     }
                     snapShots?.documentChanges?.forEach {
                         val contact = it.document.toObject(FirebaseContact::class.java)
+
+                        Log.d(TAG, "listenToContacts: $contact")
 
                         viewModelScope.launch {
                             when (it.type) {
@@ -92,6 +109,7 @@ class AppViewModel @Inject constructor(
                         println("Document change: ${it.document.data}")
 
                         val conversation = it.document.toObject(Conversation::class.java)
+                        Log.d(TAG, "listenToConversation: $conversation")
 
                         viewModelScope.launch {
                             when (it.type) {

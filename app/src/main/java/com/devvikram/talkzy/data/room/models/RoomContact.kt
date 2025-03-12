@@ -6,8 +6,8 @@ import com.devvikram.talkzy.config.enums.ContactType
 
 @Entity(tableName = "contacts")
 data class RoomContact(
-    @PrimaryKey(autoGenerate = true)
     val localContactId: Long? = 0L,
+    @PrimaryKey
     val userId: String = "", // user id of the contact
     val name: String = "",
     val email: String = "",

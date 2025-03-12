@@ -32,7 +32,6 @@ object ModelMapper {
     // Convert FirebaseContact to RoomContact
     fun toRoomContact(firebaseContact: FirebaseContact): RoomContact {
         return RoomContact(
-            localContactId = 0L,
             userId = firebaseContact.userId,
             name = firebaseContact.name,
             email = firebaseContact.email,

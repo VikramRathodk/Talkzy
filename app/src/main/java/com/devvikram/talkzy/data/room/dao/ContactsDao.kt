@@ -4,18 +4,20 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
+import androidx.room.Upsert
 import com.devvikram.talkzy.data.room.models.RoomContact
 
 @Dao
 interface ContactsDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertContact(roomContact: RoomContact)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertContacts(vararg roomContacts: RoomContact)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertAllContacts(roomContacts: List<RoomContact>)
 
     @Query("SELECT * FROM contacts")
