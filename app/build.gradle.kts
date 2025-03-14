@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.devvikram.talkzy"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -68,20 +68,20 @@ dependencies {
     implementation(libs.androidx.material3)
 
 
-
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
     //room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.firebase.auth.ktx)
 
     annotationProcessor(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
     //dagger hilt
     implementation(libs.hilt.android)
-    implementation (libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.navigation.compose)
 
 
     // Ksp
@@ -94,6 +94,7 @@ dependencies {
     // firebase dependencies
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.perf)
 
@@ -106,7 +107,16 @@ dependencies {
     // navigation
     implementation(libs.androidx.navigation.compose)
 
+    // lottie
+    implementation(libs.lottie.compose)
 
+
+    // google font
+    implementation(libs.androidx.ui.text.google.fonts)
+
+    // coil
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

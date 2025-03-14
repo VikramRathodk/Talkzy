@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import androidx.room.Upsert
 import com.devvikram.talkzy.data.room.models.RoomContact
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ContactsDao {
@@ -28,4 +29,11 @@ interface ContactsDao {
 
     @Query("DELETE FROM contacts WHERE userId = :userId")
     suspend fun deleteContactById(userId: String)
+
+
+    @Query("SELECT * FROM contacts WHERE userId = :userId")
+    fun getContactByUserIdWithFlow(userId: String): Flow<RoomContact?>
+
+    @Query("SELECT * FROM contacts")
+    fun getAllContactsWithFlow(): Flow<List<RoomContact>>
 }

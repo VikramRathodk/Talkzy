@@ -1,20 +1,27 @@
 package com.devvikram.talkzy.ui.screens.home
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -43,6 +50,8 @@ fun HomeScreen(
     val currentDestination =
         homeNavigationController.currentBackStackEntryAsState().value?.destination
 
+    val loggedUser = homeViewmodel.loggedUser.collectAsState(initial = null).value
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -50,7 +59,8 @@ fun HomeScreen(
                 HomeToolbar(
                     appViewModel = appViewmodel,
                     homeNavigationController = homeNavigationController,
-                    currentDestination = currentDestination
+                    currentDestination = currentDestination,
+                    loggedUser = loggedUser
                 )
             }
         },
@@ -62,6 +72,9 @@ fun HomeScreen(
         floatingActionButton = {
             if (isHomeToolbarVisibleFlow) {
                 FloatingActionButton(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    containerColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = CircleShape,
                     onClick = {
                         homeNavigationController.navigate(HomeNavigationDestination.ContactsDest.route)
                     }
@@ -79,7 +92,11 @@ fun HomeScreen(
                 .fillMaxWidth()
                 .padding(it),
             navController = homeNavigationController,
-            startDestination = HomeNavigationDestination.ConversationDest.route
+            startDestination = HomeNavigationDestination.ConversationDest.route,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300)) },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300)) },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) }
         ) {
             composable(
                 route = HomeNavigationDestination.ConversationDest.route,
@@ -92,6 +109,7 @@ fun HomeScreen(
                     homeNavigationController = homeNavigationController,
                     homeViewmodel = homeViewmodel,
                     conversationViewmodel = conversationViewmodel,
+                    appLevelNavController = appLevelNavController
                 )
             }
             composable(
@@ -105,6 +123,7 @@ fun HomeScreen(
                     homeNavController = homeNavigationController,
                     homeViewmodel = homeViewmodel,
                     contactViewmodel = contactViewmodel,
+                    appLevelNavController = appLevelNavController
                 )
             }
             composable(

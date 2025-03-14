@@ -8,8 +8,11 @@ import com.devvikram.talkzy.config.constants.App
 import com.devvikram.talkzy.data.room.converters.Converters
 import com.devvikram.talkzy.data.room.dao.ContactsDao
 import com.devvikram.talkzy.data.room.dao.ConversationDao
+import com.devvikram.talkzy.data.room.dao.MessageDao
+import com.devvikram.talkzy.data.room.dao.ParticipantDao
 import com.devvikram.talkzy.data.room.models.RoomContact
 import com.devvikram.talkzy.data.room.models.RoomConversation
+import com.devvikram.talkzy.data.room.models.RoomMessage
 import com.devvikram.talkzy.data.room.models.RoomParticipant
 
 
@@ -18,6 +21,7 @@ import com.devvikram.talkzy.data.room.models.RoomParticipant
         RoomContact::class,
         RoomConversation::class,
         RoomParticipant::class,
+        RoomMessage::class,
     ],
     version = App.DATABASE_CURRENT_VERSION,
     exportSchema = true
@@ -27,4 +31,7 @@ import com.devvikram.talkzy.data.room.models.RoomParticipant
 abstract class AppDatabase : RoomDatabase(){
     abstract fun contactsDao () : ContactsDao
     abstract fun conversationDao(): ConversationDao
+    abstract fun participantDao(): ParticipantDao
+    abstract fun messageDao(): MessageDao
+
 }
