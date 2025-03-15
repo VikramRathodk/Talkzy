@@ -26,26 +26,13 @@ class ConversationRepository @Inject constructor(
         conversation: RoomConversation,
         roomParticipants: List<RoomParticipant>,
         participants: List<Participant>,
-        newMessage: RoomMessage,
     ) {
-        val conversationId =
-            firestore.collection(FirebaseConstant.FIRESTORE_CONVERSATION_COLLECTION).document().id
-
-        val newConversation = conversation.copy(conversationId = conversationId)
-
-        val newParticipants = roomParticipants.map { it.copy(conversationId = conversationId) }
-
-        conversationDao.insertConversation(newConversation)
-
-        messageRepository.insertNewMessage(
-            newMessage.copy(conversationId = conversationId),
-            newConversation
-        )
-        participantRepository.insertAllParticipants(newParticipants)
+        conversationDao.insertConversation(conversation)
+        participantRepository.insertAllParticipants(roomParticipants)
         firebaseConversationRepository.insertConversation(
             ModelMapper.toFirebaseConversation(
-                newConversation,
-                participants
+                roomConversation = conversation,
+                participants = participants
             )
         )
     }

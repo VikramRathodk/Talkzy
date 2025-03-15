@@ -26,14 +26,10 @@ class MessageRepository @Inject constructor(
         conversation: RoomConversation,
     ) {
         try {
-            val messageId = firebaseFirestore.collection(FirebaseConstant.FIRESTORE_MESSAGE_COLLECTION)
-                .document().id
-            Log.d("InsertNewMessage", "Generated new message ID: $messageId")
-
             val datePartition = AppUtils.getDatePartition(System.currentTimeMillis())
             Log.d("InsertNewMessage", "Calculated date partition: $datePartition")
 
-            val newMessage = roomMessage.copy(messageId = messageId, datePartition = datePartition)
+            val newMessage = roomMessage.copy(datePartition = datePartition)
             Log.d("InsertNewMessage", "New message object: $newMessage")
 
             // Insert into local database

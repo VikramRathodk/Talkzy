@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.devvikram.talkzy.config.constants.LoginPreference
 import com.devvikram.talkzy.config.constants.MessageType
+import com.devvikram.talkzy.data.firebase.config.FirebaseConstant
 import com.devvikram.talkzy.data.firebase.models.Participant
 import com.devvikram.talkzy.data.firebase.repository.FirebaseConversationRepository
 import com.devvikram.talkzy.data.room.models.RoomContact
@@ -17,6 +18,7 @@ import com.devvikram.talkzy.data.room.models.RoomParticipant
 import com.devvikram.talkzy.data.room.repository.ContactRepository
 import com.devvikram.talkzy.data.room.repository.ConversationRepository
 import com.devvikram.talkzy.data.room.repository.MessageRepository
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -39,7 +41,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
     private val loginPreference: LoginPreference,
     private val firebaseConversationRepository: FirebaseConversationRepository,
     private val contactRepository: ContactRepository,
-    private val messageRepository: MessageRepository
+    private val messageRepository: MessageRepository,
+    private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
     private val _conversationId = MutableStateFlow("")
@@ -48,6 +51,7 @@ class PersonalChatRoomViewmodel @Inject constructor(
     fun setConversationId(conversationId: String) {
         _conversationId.value = conversationId
     }
+
     private val _loggedUser = MutableStateFlow<RoomContact?>(null)
     val loggedUser: StateFlow<RoomContact?> = _loggedUser.asStateFlow()
 
@@ -63,78 +67,119 @@ class PersonalChatRoomViewmodel @Inject constructor(
 
 
     fun sendMessage(message: String) {
-        println("sendMessage called with message: $message ")
+        Log.d(TAG, "sendMessage called with message: $message")
+        Log.d(TAG, "sendMessage: conversationId = ${conversationId}")
+
         viewModelScope.launch {
-            val senderUserId = loginPreference.getUserId()
-            val existingConversation =
-                conversationRepository.getConversationByConversationId(_conversationId.value)
-            val receiverUserId = _receiverUserProfile.value?.userId.toString()
-            val participantIds = listOf(senderUserId, receiverUserId)
+            try {
+                val senderUserId = loginPreference.getUserId()
+                val receiverUserId = _receiverUserProfile.value?.userId ?: run {
+                    Log.e(TAG, "Receiver user profile is null. Cannot send message.")
+                    return@launch
+                }
 
-            if (existingConversation != null) {
-                // Step 1 : create a new message with message type text
-                Log.d(
-                    TAG,
-                    "sendMessage: existingConversation: ${existingConversation.conversationId} name : ${existingConversation.name}"
-                )
-                val newMessage = RoomMessage(
-                    messageId = "",
-                    conversationId = existingConversation.conversationId,
-                    text = message,
-                    senderId = senderUserId,
-                    senderName = _loggedUser.value?.name.toString(),
-                    messageType = MessageType.TEXT.toString(),
-                    timestamp = System.currentTimeMillis(),
-                )
-                Log.d(TAG, "sendMessage: Creating Existing message Without Message Id :$newMessage")
+                Log.d(TAG, "Sender User ID: $senderUserId, Receiver User ID: $receiverUserId")
 
-                messageRepository.insertNewMessage(
-                    roomMessage = newMessage,
-                    conversation = existingConversation,
-                 )
-            } else {
+                val existingConversation =
+                    conversationRepository.getConversationByConversationId(_conversationId.value)
+                val newMessageId =
+                    firestore.collection(FirebaseConstant.FIRESTORE_MESSAGE_COLLECTION)
+                        .document().id
+                val participantIds = listOf(senderUserId, receiverUserId)
 
-                val newMessage = RoomMessage(
-                    messageId = "",
-                    conversationId = "",
-                    text = message,
-                    senderName = _loggedUser.value?.name.toString(),
-                    senderId = senderUserId,
-                    messageType = MessageType.TEXT.toString(),
-                    timestamp = System.currentTimeMillis(),
-                )
-                Log.d(TAG, "sendMessage: Creating New message Without Message Id :$newMessage")
-
-                val conversation = RoomConversation(
-                    conversationId = "",
-                    userId = receiverUserId,
-                    type = "P",
-                    name = _receiverUserProfile.value?.name.toString(),
-                    createdBy = senderUserId,
-                    createdAt = System.currentTimeMillis(),
-                    participantIds = participantIds
-                )
-
-                val roomParticipants = participantIds.map {
-                    RoomParticipant(
-                        localParticipantId = 0,
-                        userId = it,
-                        conversationId = conversation.conversationId,
-                        role = "MEMBER"
+                if (existingConversation != null) {
+                    sendMessageToExistingConversation(
+                        existingConversation,
+                        newMessageId,
+                        message,
+                        senderUserId
+                    )
+                } else {
+                    createNewConversationAndSendMessage(
+                        participantIds,
+                        newMessageId,
+                        message,
+                        senderUserId,
+                        receiverUserId
                     )
                 }
-                val participants = participantIds.map { Participant(userId = it, role = "MEMBER") }
-
-                println("personal: conversation not exits creating new conversation $conversation")
-                conversationRepository.createConversationWithMessage(
-                    conversation,
-                    roomParticipants,
-                    participants,
-                    newMessage
-                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in sendMessage: ${e.message}", e)
             }
-
         }
+    }
+
+    private suspend fun sendMessageToExistingConversation(
+        existingConversation: RoomConversation,
+        newMessageId: String,
+        message: String,
+        senderUserId: String
+    ) {
+        val newMessage = RoomMessage(
+            messageId = newMessageId,
+            conversationId = existingConversation.conversationId,
+            text = message,
+            senderId = senderUserId,
+            senderName = _loggedUser.value?.name.orEmpty(),
+            messageType = MessageType.TEXT.toString(),
+            timestamp = System.currentTimeMillis(),
+        )
+
+        Log.d(TAG, "sendMessage: Existing conversation detected. Sending message: $newMessage")
+
+        messageRepository.insertNewMessage(newMessage, existingConversation)
+        Log.d(TAG, "sendMessage: Message sent successfully in existing conversation")
+    }
+
+    private suspend fun createNewConversationAndSendMessage(
+        participantIds: List<String>,
+        newMessageId: String,
+        message: String,
+        senderUserId: String,
+        receiverUserId: String
+    ) {
+        val newConversationId =
+            firestore.collection(FirebaseConstant.FIRESTORE_CONVERSATION_COLLECTION).document().id
+
+        val newMessage = RoomMessage(
+            messageId = newMessageId,
+            conversationId = newConversationId,
+            text = message,
+            senderId = senderUserId,
+            senderName = _loggedUser.value?.name.orEmpty(),
+            messageType = MessageType.TEXT.toString(),
+            timestamp = System.currentTimeMillis(),
+        )
+
+        val conversation = RoomConversation(
+            conversationId = newConversationId,
+            userId = receiverUserId,
+            type = "P",
+            name = _receiverUserProfile.value?.name.orEmpty(),
+            createdBy = senderUserId,
+            createdAt = System.currentTimeMillis(),
+            participantIds = participantIds
+        )
+
+        val roomParticipants = participantIds.map {
+            RoomParticipant(
+                localParticipantId = 0,
+                userId = it,
+                conversationId = newConversationId,
+                role = "MEMBER"
+            )
+        }
+
+        Log.d(TAG, "Creating new conversation: $conversation")
+
+        conversationRepository.createConversationWithMessage(
+            conversation,
+            roomParticipants,
+            participantIds.map { Participant(it, "MEMBER") })
+        messageRepository.insertNewMessage(newMessage, conversation)
+
+        _conversationId.value = newConversationId
+        Log.d(TAG, "sendMessage: New conversation created and message sent successfully")
     }
 
     fun getReceiverInfo(receiverId: String) {

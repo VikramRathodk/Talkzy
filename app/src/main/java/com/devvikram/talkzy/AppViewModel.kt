@@ -10,6 +10,7 @@ import com.devvikram.talkzy.config.constants.LoginPreference
 import com.devvikram.talkzy.data.firebase.config.FirebaseConstant
 import com.devvikram.talkzy.data.firebase.models.Conversation
 import com.devvikram.talkzy.data.firebase.models.FirebaseContact
+import com.devvikram.talkzy.data.firebase.repository.FirebaseContactRepository
 import com.devvikram.talkzy.data.room.repository.ContactRepository
 import com.devvikram.talkzy.data.room.repository.ConversationRepository
 import com.google.firebase.firestore.FirebaseFirestore
@@ -23,8 +24,9 @@ class AppViewModel @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val conversationRepository: ConversationRepository,
     private val contactRepository: ContactRepository,
+    private val firebaeContactRepository: FirebaseContactRepository,
     val loginPreference: LoginPreference
-) :  ViewModel() {
+) : ViewModel() {
 
 
     companion object {
@@ -50,49 +52,51 @@ class AppViewModel @Inject constructor(
 
     fun listenToContacts() {
         println("Listening to contacts")
-            firebaseFirestore.collection(FirebaseConstant.FIRESTORE_CONTACTS_COLLECTION)
-                .addSnapshotListener { snapShots, e ->
-                    if (e != null) {
-                        Log.d(TAG, "listenToContacts:  ${e.message}}")
-                        return@addSnapshotListener
-                    }
-                    snapShots?.documentChanges?.forEach {
-                        val contact = it.document.toObject(FirebaseContact::class.java)
+        firebaseFirestore.collection(FirebaseConstant.FIRESTORE_CONTACTS_COLLECTION)
+            .addSnapshotListener { snapShots, e ->
+                if (e != null) {
+                    Log.d(TAG, "listenToContacts:  ${e.message}}")
+                    return@addSnapshotListener
+                }
+                snapShots?.documentChanges?.forEach {
+                    val contact = it.document.toObject(FirebaseContact::class.java)
 
-                        Log.d(TAG, "listenToContacts: $contact")
+                    Log.d(TAG, "listenToContacts: $contact")
 
-                        viewModelScope.launch {
-                            when (it.type) {
-                                com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
-                                    println("contact: Document added: ${it.document.data}")
-                                    contactRepository.insertContact(
-                                        ModelMapper.toRoomContact(
-                                            contact
-                                        )
+                    viewModelScope.launch {
+                        when (it.type) {
+                            com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
+                                println("contact: Document added: ${it.document.data}")
+                                contactRepository.insertContact(
+                                    ModelMapper.toRoomContact(
+                                        contact
                                     )
-                                }
+                                )
+                            }
 
-                                com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
-                                    println("contact: Document modified: ${it.document.data}")
-                                    contactRepository.insertContact(
-                                        ModelMapper.toRoomContact(
-                                            contact
-                                        )
+                            com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
+                                println("contact: Document modified: ${it.document.data}")
+                                contactRepository.insertContact(
+                                    ModelMapper.toRoomContact(
+                                        contact
                                     )
-                                }
-                                com.google.firebase.firestore.DocumentChange.Type.REMOVED -> {
-                                    println("contact: Document removed: ${it.document.data}")
-                                    contactRepository.deleteContactById(contact.userId)
-                                }
-                                else -> {
-                                    println("Unknown contact document change type: ${it.type}")
-                                    // Handle other event types
-                                }
+                                )
+                            }
+
+                            com.google.firebase.firestore.DocumentChange.Type.REMOVED -> {
+                                println("contact: Document removed: ${it.document.data}")
+                                contactRepository.deleteContactById(contact.userId)
+                            }
+
+                            else -> {
+                                println("Unknown contact document change type: ${it.type}")
+                                // Handle other event types
                             }
                         }
                     }
                 }
-        }
+            }
+    }
 
     fun listenToConversation() {
         conversationListenerRegistration?.remove()
@@ -121,6 +125,27 @@ class AppViewModel @Inject constructor(
                                             loginPreference.getUserId()
                                         )
                                     )
+                                    if (conversation.type == "P") {
+                                        val loggedInUserId = loginPreference.getUserId()
+                                        val receiverId = conversation.participantIds.firstOrNull { it != loggedInUserId }
+                                            ?: return@launch
+                                        val existingContact =
+                                            contactRepository.getContactById(receiverId)
+                                        if (existingContact != null) {
+                                            contactRepository.insertContact(
+                                                existingContact.copy(
+                                                    conversationId = conversation.conversationId
+                                                )
+                                            )
+                                            firebaeContactRepository.updateField(
+                                                existingContact.userId, mapOf(
+                                                    "conversationId" to conversation.conversationId,
+                                                    "lastModifiedAt" to System.currentTimeMillis()
+                                                )
+                                            )
+
+                                        }
+                                    }
                                 }
 
                                 com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {

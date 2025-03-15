@@ -20,4 +20,11 @@ class FirebaseContactRepository @Inject constructor(
         getContactCollection().document(contact.userId).set(contact)
     }
 
+
+    fun updateField(string: String, field: Map<String, Any>) {
+        getContactCollection().document(string).update(field)
+
+    }
+
+
 }

@@ -1,5 +1,7 @@
 package com.devvikram.talkzy.ui.screens.contacts
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +47,7 @@ fun ContactScreen(
     contactViewmodel: ContactViewmodel,
     appLevelNavController: NavController
 ) {
-    val contacts = contactViewmodel.contacts.collectAsState(initial = emptyList())
+    val contacts = contactViewmodel.contactList.collectAsState(initial = emptyList())
 
     Scaffold(
         topBar = {
@@ -77,6 +79,7 @@ fun ContactScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(contacts.value) { contact ->
+                Log.d(TAG, "ContactScreen: $contact")
                 ContactItem(contact){
                     appLevelNavController.navigate(HomeNavigationDestination.PersonalChatroomDest.createRoute(
                         conversationId = contact.conversationId,
