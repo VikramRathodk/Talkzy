@@ -18,6 +18,7 @@ import com.devvikram.talkzy.data.room.models.RoomParticipant
 import com.devvikram.talkzy.data.room.repository.ContactRepository
 import com.devvikram.talkzy.data.room.repository.ConversationRepository
 import com.devvikram.talkzy.data.room.repository.MessageRepository
+import com.devvikram.talkzy.ui.screens.personalChatroom.models.PersonalChatMessageItem
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -50,20 +52,93 @@ class PersonalChatRoomViewmodel @Inject constructor(
 
     fun setConversationId(conversationId: String) {
         _conversationId.value = conversationId
+        viewModelScope.launch {
+            messageRepository.getMessageByConversationIdWithFlow(_conversationId.value)
+                .collectLatest { messages ->
+                    _chatMessageList.value = messages.mapNotNull { roomMessage ->
+                        when (roomMessage.messageType) {
+                            MessageType.TEXT.name -> {
+                                if (roomMessage.senderId == loginPreference.getUserId()) {
+                                    PersonalChatMessageItem.SenderTextMessageItem(
+                                        messageId = roomMessage.messageId,
+                                        conversationId = roomMessage.conversationId,
+                                        senderId = roomMessage.senderId,
+                                        senderName = roomMessage.senderName ?: "Unknown",
+                                        text = roomMessage.text.orEmpty(),
+                                        timestamp = roomMessage.timestamp,
+                                        isEdited = roomMessage.isEdited,
+                                        replyToMessageId = roomMessage.replyToMessageId
+                                    )
+                                } else {
+                                    PersonalChatMessageItem.ReceiverTextMessageItem(
+                                        messageId = roomMessage.messageId,
+                                        conversationId = roomMessage.conversationId,
+                                        senderId = roomMessage.senderId,
+                                        senderName = roomMessage.senderName ?: "Unknown",
+                                        text = roomMessage.text.orEmpty(),
+                                        timestamp = roomMessage.timestamp,
+                                        isEdited = roomMessage.isEdited,
+                                        replyToMessageId = roomMessage.replyToMessageId
+                                    )
+                                }
+                            }
+
+                            MessageType.IMAGE.name -> {
+                                if (roomMessage.senderId == loginPreference.getUserId()) {
+                                    PersonalChatMessageItem.SenderImageMessageItem(
+                                        messageId = roomMessage.messageId,
+                                        conversationId = roomMessage.conversationId,
+                                        senderId = roomMessage.senderId,
+                                        senderName = roomMessage.senderName ?: "Unknown",
+                                        imageUrl = roomMessage.mediaUrl.orEmpty(),
+                                        timestamp = roomMessage.timestamp,
+                                        mediaSize = roomMessage.mediaSize,
+                                        thumbnailUrl = roomMessage.thumbnailUrl,
+                                        isUploaded = roomMessage.isUploaded,
+                                        isDownloaded = roomMessage.isDownloaded
+                                    )
+                                } else {
+                                    PersonalChatMessageItem.ReceiverImageMessageItem(
+                                        messageId = roomMessage.messageId,
+                                        conversationId = roomMessage.conversationId,
+                                        senderId = roomMessage.senderId,
+                                        senderName = roomMessage.senderName ?: "Unknown",
+                                        imageUrl = roomMessage.mediaUrl.orEmpty(),
+                                        timestamp = roomMessage.timestamp,
+                                        mediaSize = roomMessage.mediaSize,
+                                        thumbnailUrl = roomMessage.thumbnailUrl,
+                                        isUploaded = roomMessage.isUploaded,
+                                        isDownloaded = roomMessage.isDownloaded
+                                    )
+                                }
+                            }
+
+                            else -> if (_isTyping.value) PersonalChatMessageItem.TypingIndicator else null
+                        }
+                    }
+                }
+        }
     }
+
+    internal val _isTyping = MutableStateFlow<Boolean>(false)
+
+    private val _receiverUserProfile = MutableStateFlow<RoomContact?>(null)
+    val receiverUserProfile: StateFlow<RoomContact?> get() = _receiverUserProfile.asStateFlow()
+
 
     private val _loggedUser = MutableStateFlow<RoomContact?>(null)
     val loggedUser: StateFlow<RoomContact?> = _loggedUser.asStateFlow()
+
+    private val _chatMessageList = MutableStateFlow<List<PersonalChatMessageItem>>(emptyList())
+    val chatMessageList: StateFlow<List<PersonalChatMessageItem>> get() = _chatMessageList.asStateFlow()
 
     init {
         contactRepository.getContactByUserIdWithFlow(loginPreference.getUserId())
             .onEach { _loggedUser.value = it }
             .launchIn(viewModelScope)
+
+
     }
-
-
-    private val _receiverUserProfile = MutableStateFlow<RoomContact?>(null)
-    val receiverUserProfile: StateFlow<RoomContact?> get() = _receiverUserProfile
 
 
     fun sendMessage(message: String) {

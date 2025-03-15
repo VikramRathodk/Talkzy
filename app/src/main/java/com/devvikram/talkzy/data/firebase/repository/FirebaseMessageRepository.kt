@@ -1,8 +1,12 @@
 package com.devvikram.talkzy.data.firebase.repository
 
+import android.util.Log
+import com.devvikram.talkzy.AppUtils
 import com.devvikram.talkzy.data.firebase.config.FirebaseConstant
 import com.devvikram.talkzy.data.firebase.models.ChatMessage
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.tasks.await
 import java.util.logging.Logger
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -32,6 +36,20 @@ class FirebaseMessageRepository @Inject constructor(
             logger.info("Message added with ID: ${it.id}")
         }.addOnFailureListener {
             logger.severe("Error adding message: ${it.message}")  // Handle the error appropriately
+        }
+    }
+
+    suspend fun updateMessageInFirebase(message: ChatMessage,datePartition: String) {
+        try {
+            firestore.collection(FirebaseConstant.FIRESTORE_MESSAGE_COLLECTION)
+                .document(message.conversationId)
+                .collection(datePartition)
+                .document(message.messageId)
+                .set(message, SetOptions.merge())
+                .await()
+            logger.info("Message updated successfully: ${message.messageId}")
+        } catch (error: Exception) {
+            logger.severe("Error updating message: ${error.message}")  // Handle the error appropriately
         }
     }
 }

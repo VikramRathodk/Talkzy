@@ -8,15 +8,24 @@ import androidx.lifecycle.viewModelScope
 import com.devvikram.talkzy.config.ModelMapper
 import com.devvikram.talkzy.config.constants.LoginPreference
 import com.devvikram.talkzy.data.firebase.config.FirebaseConstant
+import com.devvikram.talkzy.data.firebase.models.ChatMessage
 import com.devvikram.talkzy.data.firebase.models.Conversation
 import com.devvikram.talkzy.data.firebase.models.FirebaseContact
 import com.devvikram.talkzy.data.firebase.repository.FirebaseContactRepository
+import com.devvikram.talkzy.data.firebase.repository.FirebaseMessageRepository
 import com.devvikram.talkzy.data.room.repository.ContactRepository
 import com.devvikram.talkzy.data.room.repository.ConversationRepository
+import com.devvikram.talkzy.data.room.repository.MessageRepository
+import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,7 +34,11 @@ class AppViewModel @Inject constructor(
     private val conversationRepository: ConversationRepository,
     private val contactRepository: ContactRepository,
     private val firebaeContactRepository: FirebaseContactRepository,
-    val loginPreference: LoginPreference
+    val loginPreference: LoginPreference,
+    private val messageRepository: MessageRepository,
+    private val firestore: FirebaseFirestore,
+    private val firebaseMessageRepository: FirebaseMessageRepository
+
 ) : ViewModel() {
 
 
@@ -34,6 +47,8 @@ class AppViewModel @Inject constructor(
 
     }
 
+    private val _currentConversationId = MutableLiveData<String>("")
+    val currentConversationId: LiveData<String> get() = _currentConversationId
 
     private var conversationListenerRegistration: ListenerRegistration? = null
     private var contactListenerRegistration: ListenerRegistration? = null
@@ -43,6 +58,8 @@ class AppViewModel @Inject constructor(
 
     val _isOnBoardingCompleted = MutableLiveData(false)
     val isOnBoardingCompleted: LiveData<Boolean> = _isOnBoardingCompleted
+
+    private val messageListeners = mutableMapOf<String, ListenerRegistration>()
 
     init {
         _isLoggedIn.value = loginPreference.isLoggedIn()
@@ -127,8 +144,9 @@ class AppViewModel @Inject constructor(
                                     )
                                     if (conversation.type == "P") {
                                         val loggedInUserId = loginPreference.getUserId()
-                                        val receiverId = conversation.participantIds.firstOrNull { it != loggedInUserId }
-                                            ?: return@launch
+                                        val receiverId =
+                                            conversation.participantIds.firstOrNull { it != loggedInUserId }
+                                                ?: return@launch
                                         val existingContact =
                                             contactRepository.getContactById(receiverId)
                                         if (existingContact != null) {
@@ -168,12 +186,151 @@ class AppViewModel @Inject constructor(
                                     println("Unknown document change type: ${it.type}")
                                 }
                             }
+                            syncMessages(conversation.conversationId)
                         }
 
 
                     }
 
                 }
+    }
+
+    private fun syncMessages(conversationId: String) {
+        Log.d(TAG, "syncMessages: Syncing Messages for conversation $conversationId")
+        val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+        val currentDate = formatter.format(Date())
+        val userId = loginPreference.getUserId()
+
+        // Remove existing listener before adding a new one
+        messageListeners[conversationId]?.remove()
+
+        messageListeners[conversationId] =
+            firestore.collection(FirebaseConstant.FIRESTORE_MESSAGE_COLLECTION)
+                .document(conversationId)
+                .collection(currentDate)
+                .orderBy("lastModifiedAt", Query.Direction.DESCENDING)
+                // Remove limit to get all messages
+                .addSnapshotListener { snapshots, error ->
+                    if (error != null) {
+                        Log.e(TAG, "Error listening to messages: ${error.message}")
+                        return@addSnapshotListener
+                    }
+
+                    snapshots?.documentChanges?.forEach { change ->
+                        val message = change.document.toObject(ChatMessage::class.java)
+                        Log.d(
+                            TAG,
+                            "Message sync event: ${change.type} for message ${message.messageId}"
+                        )
+
+                        viewModelScope.launch {
+                            handleMessageSync(message, userId, change.type, currentDate)
+                        }
+                    }
+                }
+    }
+
+    private suspend fun handleMessageSync(
+        firebaseMessage: ChatMessage,
+        userId: String,
+        changeType: DocumentChange.Type,
+        datePartition: String
+    ) {
+        Log.d(TAG, "handleMessageSync: ${firebaseMessage.messageId} - Type: $changeType")
+        val currentTime = System.currentTimeMillis()
+
+        when (changeType) {
+            DocumentChange.Type.ADDED -> {
+                handleAddedMessage(firebaseMessage, userId, currentTime, datePartition)
+            }
+
+            DocumentChange.Type.MODIFIED -> {
+                Log.d(TAG, "Message Modified: ${firebaseMessage.messageId}")
+                updateLocalDatabase(firebaseMessage)
+            }
+
+            DocumentChange.Type.REMOVED -> {
+                Log.d(TAG, "Message Removed: ${firebaseMessage.messageId}")
+                deleteMessageFromLocalDatabase(firebaseMessage.messageId)
+            }
+        }
+    }
+
+    private suspend fun handleAddedMessage(
+        firebaseMessage: ChatMessage,
+        userId: String,
+        currentTime: Long,
+        datePartition: String
+    ) {
+        Log.d(TAG, "handleAddedMessage: Adding ${firebaseMessage.messageId}")
+
+        val readBy = firebaseMessage.isReadBy?.toMutableMap() ?: mutableMapOf()
+        val receivedBy = firebaseMessage.isReceivedBy?.toMutableMap() ?: mutableMapOf()
+
+        var isUpdated = false
+
+        if (isConversationOpen(firebaseMessage.conversationId)) {
+            if (!readBy.containsKey(userId)) {
+                readBy[userId] = currentTime
+                isUpdated = true
+            }
+        } else {
+            if (!receivedBy.containsKey(userId)) {
+                receivedBy[userId] = currentTime
+                isUpdated = true
+            }
+        }
+
+        if (isUpdated) {
+            val updatedMessage = firebaseMessage.copy(
+                isReadBy = readBy,
+                isReceivedBy = receivedBy,
+                lastModifiedAt = currentTime
+            )
+
+            messageRepository.updateReadField(
+                messageId = updatedMessage.messageId,
+                updatedMessage.isReadBy
+            )
+            messageRepository.updateReceivedField(
+                messageId = updatedMessage.messageId,
+                updatedMessage.isReceivedBy
+            )
+            messageRepository.updateLastModifiedAt(
+                messageId = updatedMessage.messageId,
+                currentTime
+            )
+            firebaseMessageRepository.updateMessageInFirebase(
+                message = updatedMessage,
+                datePartition = datePartition
+            )
+        }
+    }
+
+    private fun isConversationOpen(conversationId: String): Boolean {
+        Log.d(TAG, "isConversationOpen: {${conversationId == _currentConversationId.value}")
+        return conversationId == _currentConversationId.value
+    }
+
+    private suspend fun updateLocalDatabase(message: ChatMessage) {
+        val existingMessage = messageRepository.getMessageByMessageId(message.messageId)
+
+        if (existingMessage != null) {
+            val updatedMessage = ModelMapper.mapToRoomMessage(
+                chatMessage = message,
+                existingMessage = existingMessage
+            )
+
+
+        } else {
+            messageRepository.insertMessage(ModelMapper.mapToRoomMessage(message))
+        }
+    }
+
+    private fun deleteMessageFromLocalDatabase(messageId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            messageRepository.deleteMessageById(messageId)
+        }
     }
 
     override fun onCleared() {

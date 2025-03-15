@@ -4,13 +4,13 @@ import android.content.Context
 import android.util.Log
 import com.devvikram.talkzy.AppUtils
 import com.devvikram.talkzy.config.ModelMapper
-import com.devvikram.talkzy.data.firebase.config.FirebaseConstant
 import com.devvikram.talkzy.data.firebase.repository.FirebaseMessageRepository
 import com.devvikram.talkzy.data.room.dao.MessageDao
 import com.devvikram.talkzy.data.room.models.RoomConversation
 import com.devvikram.talkzy.data.room.models.RoomMessage
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -49,4 +49,38 @@ class MessageRepository @Inject constructor(
         }
     }
 
+    fun getMessageByConversationIdWithFlow(conversationId: String): Flow<List<RoomMessage>> {
+        return messageDao.getMessagesByConversationIdWithFlow(conversationId)
+    }
+
+    internal suspend fun insertMessage(message: RoomMessage) {
+        messageDao.insertMessage(message)
+    }
+
+    suspend fun getMessageByMessageId(messageId: String): RoomMessage {
+        return messageDao.getMessageByMessageId(messageId)
+    }
+
+    suspend fun updateReceivedField(
+        messageId: String,
+        updatedReceivedBy: Map<String, Long>,
+    ) {
+        messageDao.updateMessageReceivedByMap(messageId, updatedReceivedBy.toMap())
+
+    }
+
+    suspend fun updateReadField(
+        messageId: String,
+        updatedReadBy: Map<String, Long>,
+    ) {
+        messageDao.updateMessageReadBy(messageId, updatedReadBy.toMap())
+    }
+
+    suspend fun updateLastModifiedAt(messageId: String, currentTime: Long) {
+        messageDao.updateLastModifiedAt(messageId, currentTime)
+
+    }
+    suspend fun deleteMessageById(messageId: String) {
+        messageDao.deleteMessageById(messageId)
+    }
 }
