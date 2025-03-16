@@ -11,5 +11,5 @@ data class ConversationWithContacts(
         parentColumn = "userId",
         entityColumn = "userId"
     )
-    val participants: RoomContact?
+    val contact: RoomContact? = null
 )

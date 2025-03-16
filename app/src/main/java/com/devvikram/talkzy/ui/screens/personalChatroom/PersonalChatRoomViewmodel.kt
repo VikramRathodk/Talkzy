@@ -3,7 +3,6 @@ package com.devvikram.talkzy.ui.screens.personalChatroom
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.util.Log
-import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.devvikram.talkzy.config.constants.LoginPreference
@@ -22,16 +21,12 @@ import com.devvikram.talkzy.ui.screens.personalChatroom.models.PersonalChatMessa
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -67,7 +62,9 @@ class PersonalChatRoomViewmodel @Inject constructor(
                                         text = roomMessage.text.orEmpty(),
                                         timestamp = roomMessage.timestamp,
                                         isEdited = roomMessage.isEdited,
-                                        replyToMessageId = roomMessage.replyToMessageId
+                                        replyToMessageId = roomMessage.replyToMessageId,
+                                        isReadBy = roomMessage.isReadBy,
+                                        isReceivedBy = roomMessage.isReceivedBy
                                     )
                                 } else {
                                     PersonalChatMessageItem.ReceiverTextMessageItem(
@@ -78,7 +75,9 @@ class PersonalChatRoomViewmodel @Inject constructor(
                                         text = roomMessage.text.orEmpty(),
                                         timestamp = roomMessage.timestamp,
                                         isEdited = roomMessage.isEdited,
-                                        replyToMessageId = roomMessage.replyToMessageId
+                                        replyToMessageId = roomMessage.replyToMessageId,
+                                        isReadBy = roomMessage.isReadBy,
+                                        isReceivedBy = roomMessage.isReceivedBy
                                     )
                                 }
                             }
@@ -95,7 +94,9 @@ class PersonalChatRoomViewmodel @Inject constructor(
                                         mediaSize = roomMessage.mediaSize,
                                         thumbnailUrl = roomMessage.thumbnailUrl,
                                         isUploaded = roomMessage.isUploaded,
-                                        isDownloaded = roomMessage.isDownloaded
+                                        isDownloaded = roomMessage.isDownloaded,
+                                        isReadBy = roomMessage.isReadBy,
+                                        isReceivedBy = roomMessage.isReceivedBy
                                     )
                                 } else {
                                     PersonalChatMessageItem.ReceiverImageMessageItem(
@@ -108,7 +109,9 @@ class PersonalChatRoomViewmodel @Inject constructor(
                                         mediaSize = roomMessage.mediaSize,
                                         thumbnailUrl = roomMessage.thumbnailUrl,
                                         isUploaded = roomMessage.isUploaded,
-                                        isDownloaded = roomMessage.isDownloaded
+                                        isDownloaded = roomMessage.isDownloaded,
+                                        isReadBy = roomMessage.isReadBy,
+                                        isReceivedBy = roomMessage.isReceivedBy
                                     )
                                 }
                             }
@@ -164,18 +167,18 @@ class PersonalChatRoomViewmodel @Inject constructor(
 
                 if (existingConversation != null) {
                     sendMessageToExistingConversation(
-                        existingConversation,
-                        newMessageId,
-                        message,
-                        senderUserId
+                        existingConversation = existingConversation,
+                        newMessageId = newMessageId,
+                        message = message,
+                        senderUserId = senderUserId,
                     )
                 } else {
                     createNewConversationAndSendMessage(
-                        participantIds,
-                        newMessageId,
-                        message,
-                        senderUserId,
-                        receiverUserId
+                        participantIds = participantIds,
+                        newMessageId = newMessageId,
+                        message = message,
+                        senderUserId = senderUserId,
+                        receiverUserId = receiverUserId
                     )
                 }
             } catch (e: Exception) {
@@ -213,6 +216,7 @@ class PersonalChatRoomViewmodel @Inject constructor(
         senderUserId: String,
         receiverUserId: String
     ) {
+        Log.d(TAG, "createNewConversationAndSendMessage:sender $senderUserId receiver $receiverUserId")
         val newConversationId =
             firestore.collection(FirebaseConstant.FIRESTORE_CONVERSATION_COLLECTION).document().id
 
@@ -230,7 +234,6 @@ class PersonalChatRoomViewmodel @Inject constructor(
             conversationId = newConversationId,
             userId = receiverUserId,
             type = "P",
-            name = _receiverUserProfile.value?.name.orEmpty(),
             createdBy = senderUserId,
             createdAt = System.currentTimeMillis(),
             participantIds = participantIds

@@ -19,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.devvikram.talkzy.ui.navigation.HomeNavigationDestination
+import com.devvikram.talkzy.ui.navigation.OnboardingDestination
 import com.devvikram.talkzy.ui.screens.groupchatroom.GroupChatroomScreen
 import com.devvikram.talkzy.ui.screens.home.HomeScreen
 import com.devvikram.talkzy.ui.screens.onboarding.OnboardingNavGraph
@@ -38,11 +39,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TalkzyTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    appViewModel.listenToContacts()
-                    appViewModel.listenToConversation()
-                    AppScreen(modifier = Modifier.padding(innerPadding), viewModel = appViewModel)
-                }
+                appViewModel.listenToContacts()
+                appViewModel.listenToConversation()
+                AppScreen(modifier = Modifier, viewModel = appViewModel)
             }
         }
     }
@@ -55,7 +54,7 @@ fun AppScreen(modifier: Modifier, viewModel: AppViewModel) {
     val isOnboardingCompleted by viewModel.isOnBoardingCompleted.observeAsState(initial = false)
 
     if (isLoggedIn) {
-        AppNavigationScreen(viewModel, navController)
+        AppNavigationScreen(viewModel, navController, modifier)
     } else {
         OnBoardingScreen(viewModel, navController, isOnboardingCompleted)
     }
@@ -76,9 +75,14 @@ fun OnBoardingScreen(
 }
 
 @Composable
-fun AppNavigationScreen(viewModel: AppViewModel, navController: NavHostController) {
+fun AppNavigationScreen(
+    viewModel: AppViewModel,
+    navController: NavHostController,
+    modifier: Modifier
+) {
 
     NavHost(
+        modifier = modifier,
         navController = navController,
         startDestination = HomeNavigationDestination.HomeDest.route,
     ) {
@@ -91,7 +95,7 @@ fun AppNavigationScreen(viewModel: AppViewModel, navController: NavHostControlle
             )
         }
         composable(
-            route = HomeNavigationDestination.PersonalChatroomDest("0","0").route,
+            route = HomeNavigationDestination.PersonalChatroomDest("0", "0").route,
             arguments = listOf(
                 navArgument("conversationId") { type = NavType.StringType },
                 navArgument("receiverId") { type = NavType.StringType }

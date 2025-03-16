@@ -11,7 +11,9 @@ sealed class PersonalChatMessageItem {
         val text: String,
         val timestamp: Long,
         val isEdited: Boolean = false,
-        val replyToMessageId: String? = null
+        val replyToMessageId: String? = null,
+        val isReadBy: Map<String, Long> = emptyMap(),
+        val isReceivedBy: Map<String, Long> = emptyMap(),
     ) : PersonalChatMessageItem()
 
     // Receiver's Text Message
@@ -23,7 +25,9 @@ sealed class PersonalChatMessageItem {
         val text: String,
         val timestamp: Long,
         val isEdited: Boolean = false,
-        val replyToMessageId: String? = null
+        val replyToMessageId: String? = null,
+        val isReadBy: Map<String, Long> = emptyMap(),
+        val isReceivedBy: Map<String, Long> = emptyMap(),
     ) : PersonalChatMessageItem()
 
     // Sender's Image Message
@@ -37,7 +41,9 @@ sealed class PersonalChatMessageItem {
         val mediaSize: Long? = null,
         val thumbnailUrl: String? = null,
         val isUploaded: Boolean = false,
-        val isDownloaded: Boolean = false
+        val isDownloaded: Boolean = false,
+        val isReadBy: Map<String, Long> = emptyMap(),
+        val isReceivedBy: Map<String, Long> = emptyMap(),
     ) : PersonalChatMessageItem()
 
     // Receiver's Image Message
@@ -51,7 +57,9 @@ sealed class PersonalChatMessageItem {
         val mediaSize: Long? = null,
         val thumbnailUrl: String? = null,
         val isUploaded: Boolean = false,
-        val isDownloaded: Boolean = false
+        val isDownloaded: Boolean = false,
+        val isReadBy: Map<String, Long> = emptyMap(),
+        val isReceivedBy: Map<String, Long> = emptyMap(),
     ) : PersonalChatMessageItem()
 
     // Typing Indicator (Shown for Receiver)

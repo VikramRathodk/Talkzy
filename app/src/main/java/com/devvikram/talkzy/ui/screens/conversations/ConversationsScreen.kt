@@ -1,13 +1,14 @@
 package com.devvikram.talkzy.ui.screens.conversations
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
@@ -41,16 +42,17 @@ fun ConversationsScreen(
             .padding(8.dp)
     ) {
         // conversations iist
-        items(conversations.value.size) { item ->
-            val conversation = conversations.value[item].conversation
-            val contacts = conversations.value[item].participants
+        items(conversations.value) { item ->
+            val conversation = item.conversation
+            val contact = item.contact
+            Log.d(TAG, "ConversationsScreen: contact $contact")
 
             val conversationItem = when (conversation.type) {
                 "P" -> {
                     ConversationItem.PersonalConversation(
                         conversationId = conversation.conversationId,
-                        userId = contacts?.userId ?: "",
-                        name = conversation.name.toString(),
+                        userId = contact?.userId ?: "",
+                        name = contact?.name.toString(),
                         unreadMessageCount = 0,
                         selected = false,
                         timeStamp = conversation.createdAt,

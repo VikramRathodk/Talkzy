@@ -2,49 +2,44 @@ package com.devvikram.talkzy.ui.screens.personalChatroom
 
 import android.content.ContentValues.TAG
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.paint
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.devvikram.talkzy.AppViewModel
+import com.devvikram.talkzy.R
+import com.devvikram.talkzy.ui.reuseables.MessageInput
+import com.devvikram.talkzy.ui.reuseables.ProfileImage
 import com.devvikram.talkzy.ui.screens.personalChatroom.itemviews.ReceiverImageMessageBubble
 import com.devvikram.talkzy.ui.screens.personalChatroom.itemviews.ReceiverTextMessageBubble
 import com.devvikram.talkzy.ui.screens.personalChatroom.itemviews.SenderImageMessageBubble
@@ -63,6 +58,7 @@ fun PersonalChatroomScreen(
     receiverId: String
 ) {
     Log.d(TAG, "Opening PersonalChatroomScreen with conversationId: $conversationId")
+    Log.d(TAG, "PersonalChatroomScreen: ReceiverId : $receiverId")
 
     // Runs only when `conversationId` changes
     LaunchedEffect(conversationId) {
@@ -70,106 +66,126 @@ fun PersonalChatroomScreen(
         personalChatRoomViewmodel.getReceiverInfo(receiverId)
     }
     val chatMessageList = personalChatRoomViewmodel.chatMessageList.collectAsStateWithLifecycle()
+    val receiverProfile =
+        personalChatRoomViewmodel.receiverUserProfile.collectAsStateWithLifecycle()
 
+    val isDarkMode = isSystemInDarkTheme()
+    val backGroupResource = if (isDarkMode) {
+        R.drawable.chat_bg_dark_blue
+    } else {
+        R.drawable.chat_bg_white_light_blue_pattern
+    }
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "Chatroom") },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Profile Picture
+                        ProfileImage(
+                            imagePath = receiverProfile.value?.localProfilePicturePath,
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
+
+                        // Username & Status
+                        Column(
+                            modifier = Modifier.padding(start = 8.dp)
+                        ) {
+                            Text(
+                                text = receiverProfile.value?.name ?: "",
+                                color = Color.Black,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = "Online", // Online status
+                                color = Color.Green,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = { appLevelNavController.popBackStack() }) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { }) {
+                        Icon(Icons.Filled.Call, contentDescription = "Call")
                     }
                 }
             )
+        },
+        bottomBar = {
+            MessageInput(
+                modifier = Modifier.navigationBarsPadding(),
+                onMessageSend = { message ->
+                    personalChatRoomViewmodel.sendMessage(message)
+                },
+                onCameraClick = {},
+                onAttachmentClick = {}
+            )
+
         }
+
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
+//                .paint(
+//                    painterResource(id = backGroupResource),
+//                    contentScale = ContentScale.Crop,
+//                    alignment = Alignment.TopCenter
+//                )
                 .padding(paddingValues)
         ) {
             // Messages List
             LazyColumn(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxSize(),
-                reverseLayout = true
+                    .weight(1f),
+                reverseLayout = false
             ) {
                 items(chatMessageList.value) { message ->
                     when (message) {
-                        is PersonalChatMessageItem.SenderTextMessageItem -> SenderTextMessageBubble(message)
-                        is PersonalChatMessageItem.ReceiverTextMessageItem -> ReceiverTextMessageBubble(message)
-                        is PersonalChatMessageItem.SenderImageMessageItem -> SenderImageMessageBubble(message)
-                        is PersonalChatMessageItem.ReceiverImageMessageItem -> ReceiverImageMessageBubble(message)
+                        is PersonalChatMessageItem.SenderTextMessageItem -> SenderTextMessageBubble(
+                            message
+                        )
+
+                        is PersonalChatMessageItem.ReceiverTextMessageItem -> ReceiverTextMessageBubble(
+                            message
+                        )
+
+                        is PersonalChatMessageItem.SenderImageMessageItem -> SenderImageMessageBubble(
+                            message
+                        )
+
+                        is PersonalChatMessageItem.ReceiverImageMessageItem -> ReceiverImageMessageBubble(
+                            message
+                        )
+
                         is PersonalChatMessageItem.TypingIndicator -> TypingIndicatorBubble()
                     }
                 }
             }
 
-
-            // Message Input
-            OutlinedMessageInput { message ->
-                personalChatRoomViewmodel.sendMessage(message)
-            }
-
         }
     }
 }
-@Composable
-fun OutlinedMessageInput(
-    onMessageSend: (String) -> Unit
-) {
-    var messageText by remember { mutableStateOf("") }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = messageText,
-            onValueChange = { messageText = it },
-            modifier = Modifier
-                .weight(1f)
-                .padding(4.dp),
-            placeholder = { Text("Type a message...") },
-            shape = RoundedCornerShape(24.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = Color.Gray,
-                focusedBorderColor = Color(0xFF4CAF50),
-                cursorColor = Color.Black
-            ),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
-            keyboardActions = KeyboardActions(
-                onSend = {
-                    if (messageText.isNotBlank()) {
-                        onMessageSend(messageText)
-                        messageText = ""
-                    }
-                }
-            )
-        )
 
-        AnimatedVisibility(visible = messageText.isNotBlank()) {
-            IconButton(
-                onClick = {
-                    onMessageSend(messageText)
-                    messageText = ""
-                },
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(Color(0xFF4CAF50), shape = CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Send,
-                    contentDescription = "Send",
-                    tint = Color.White
-                )
-            }
-        }
-    }
-}
 
 
 

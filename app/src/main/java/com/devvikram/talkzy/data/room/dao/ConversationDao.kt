@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import com.devvikram.talkzy.data.room.models.ConversationWithContacts
 import com.devvikram.talkzy.data.room.models.RoomConversation
@@ -25,6 +26,7 @@ interface ConversationDao  {
     @Query("DELETE FROM conversations WHERE conversationId = :conversationId")
     suspend fun deleteConversation(conversationId: String)
 
+    @Transaction
     @Query("SELECT * FROM conversations")
     fun getConversationWithContactFlow(): Flow<List<ConversationWithContacts>>
 

@@ -53,7 +53,10 @@ object ModelMapper {
 
 
     // Convert Firebase Conversation to RoomConversation
-    fun toRoomConversation(conversation: Conversation, userId: String): RoomConversation {
+    fun toRoomConversation(conversation: Conversation, currentUserId: String): RoomConversation {
+        val userId = conversation.participantIds.firstOrNull { it != currentUserId }
+            ?: currentUserId
+
         return RoomConversation(
             conversationId = conversation.conversationId,
             userId = userId,
