@@ -37,11 +37,11 @@ fun ReceiverTextMessageBubble(message: PersonalChatMessageItem.ReceiverTextMessa
                 .widthIn(max = 250.dp)
         ) {
             Column {
-                Text(
-                    text = message.senderName,
-                    style = TextStyle(fontSize = 12.sp, color = Color.Gray),
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
+//                Text(
+//                    text = message.senderName,
+//                    style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+//                    modifier = Modifier.padding(bottom = 4.dp)
+//                )
                 Text(
                     text = message.text,
                     style = TextStyle(fontSize = 16.sp, color = Color.Black)

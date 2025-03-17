@@ -18,7 +18,6 @@ class AppUtils {
             val sdf = SimpleDateFormat("hh:mm")
             val date = Date(timestamp)
             return sdf.format(date)
-
         }
     }
 }

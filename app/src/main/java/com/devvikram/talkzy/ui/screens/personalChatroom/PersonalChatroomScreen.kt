@@ -80,46 +80,14 @@ fun PersonalChatroomScreen(
             .fillMaxSize()
             .imePadding(),
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        // Profile Picture
-                        ProfileImage(
-                            imagePath = receiverProfile.value?.localProfilePicturePath,
-                            modifier = Modifier.padding(end = 12.dp)
-                        )
-
-                        // Username & Status
-                        Column(
-                            modifier = Modifier.padding(start = 8.dp)
-                        ) {
-                            Text(
-                                text = receiverProfile.value?.name ?: "",
-                                color = Color.Black,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Text(
-                                text = "Online", // Online status
-                                color = Color.Green,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { appLevelNavController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Filled.Call, contentDescription = "Call")
-                    }
-                }
+            ChatTopBar(
+                receiverProfile = receiverProfile.value,
+                onBackClick = { appLevelNavController.popBackStack() },
+                onCallClick = { },
+                onVideoCallClick = { },
+                onMoreOptionsClick = {  }
             )
+
         },
         bottomBar = {
             MessageInput(
@@ -140,7 +108,7 @@ fun PersonalChatroomScreen(
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.background,
                             MaterialTheme.colorScheme.background
                         )
                     )
