@@ -34,6 +34,7 @@ class PersonalProfileViewModel @Inject constructor(
             _userId.collectLatest {
                 getUserDetails(it)
             }
+
         }
     }
 
