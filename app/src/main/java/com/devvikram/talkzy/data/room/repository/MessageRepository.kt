@@ -83,4 +83,10 @@ class MessageRepository @Inject constructor(
     suspend fun deleteMessageById(messageId: String) {
         messageDao.deleteMessageById(messageId)
     }
+
+
+    suspend fun deleteAllMessages() {
+        messageDao.deleteAllMessages()
+
+    }
 }

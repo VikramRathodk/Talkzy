@@ -16,6 +16,7 @@ import com.devvikram.talkzy.data.firebase.repository.FirebaseMessageRepository
 import com.devvikram.talkzy.data.room.repository.ContactRepository
 import com.devvikram.talkzy.data.room.repository.ConversationRepository
 import com.devvikram.talkzy.data.room.repository.MessageRepository
+import com.devvikram.talkzy.data.room.repository.ParticipantRepository
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -37,7 +38,8 @@ class AppViewModel @Inject constructor(
     val loginPreference: LoginPreference,
     private val messageRepository: MessageRepository,
     private val firestore: FirebaseFirestore,
-    private val firebaseMessageRepository: FirebaseMessageRepository
+    private val firebaseMessageRepository: FirebaseMessageRepository,
+    private val participantRepository: ParticipantRepository
 
 ) : ViewModel() {
 
@@ -330,6 +332,16 @@ class AppViewModel @Inject constructor(
     private fun deleteMessageFromLocalDatabase(messageId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             messageRepository.deleteMessageById(messageId)
+        }
+    }
+
+    fun clearLocalDatabase(){
+        viewModelScope.launch {
+            contactRepository.deleteAllContacts()
+            conversationRepository.deleteAllConversations()
+            messageRepository.deleteAllMessages()
+            participantRepository.deleteAllParticipants()
+            loginPreference.clear()
         }
     }
 

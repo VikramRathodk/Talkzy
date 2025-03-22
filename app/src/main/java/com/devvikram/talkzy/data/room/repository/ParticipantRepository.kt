@@ -22,4 +22,10 @@ class ParticipantRepository @Inject constructor(
 
     suspend fun getAllParticipants(conversationId: String) =
         participantDao.getAllParticipants(conversationId)
+
+    suspend fun deleteAllParticipants() {
+        participantDao.deleteAllParticipants()
+
+    }
 }
+

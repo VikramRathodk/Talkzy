@@ -2,6 +2,7 @@ package com.devvikram.talkzy.ui.screens.personalChatroom
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,13 +42,18 @@ fun ChatTopBar(
     onBackClick: () -> Unit,
     onCallClick: () -> Unit,
     onVideoCallClick: () -> Unit,
-    onMoreOptionsClick: () -> Unit
+    onMoreOptionsClick: () -> Unit,
+    onClick: () -> Unit = {}
 ) {
     TopAppBar(
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        onClick = { onClick() }
+                    )
             ) {
                 // Profile Picture
                 ProfileImage(

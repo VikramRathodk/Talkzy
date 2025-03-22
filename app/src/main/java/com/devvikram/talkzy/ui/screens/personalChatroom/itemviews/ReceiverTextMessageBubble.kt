@@ -46,11 +46,11 @@ fun ReceiverTextMessageBubble(message: PersonalChatMessageItem.ReceiverTextMessa
                     text = message.text,
                     style = TextStyle(fontSize = 16.sp, color = Color.Black)
                 )
-                Text(
-                    text = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(message.timestamp)),
-                    style = TextStyle(fontSize = 10.sp, color = Color.Gray),
-                    modifier = Modifier.align(Alignment.End)
-                )
+//                Text(
+//                    text = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(message.timestamp)),
+//                    style = TextStyle(fontSize = 10.sp, color = Color.Gray),
+//                    modifier = Modifier.align(Alignment.End)
+//                )
             }
         }
     }

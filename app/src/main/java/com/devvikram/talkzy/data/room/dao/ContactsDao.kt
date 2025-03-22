@@ -36,4 +36,7 @@ interface ContactsDao {
 
     @Query("SELECT * FROM contacts")
     fun getAllContactsWithFlow(): Flow<List<RoomContact>>
+
+    @Query("DELETE FROM contacts")
+    suspend fun deleteAllContacts()
 }

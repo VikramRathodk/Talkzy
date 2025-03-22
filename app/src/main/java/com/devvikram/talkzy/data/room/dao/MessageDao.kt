@@ -22,7 +22,7 @@ interface MessageDao {
     fun getMessagesByConversationIdWithFlow(conversationId: String): Flow<List<RoomMessage>>
 
     @Query("SELECT * FROM messages WHERE messageId = :messageId")
-    suspend fun getMessageByMessageId(messageId: String ): RoomMessage
+    suspend fun getMessageByMessageId(messageId: String): RoomMessage
 
 
     @Query("UPDATE messages SET isReceivedBy = :updatedReceivedBy WHERE messageId = :messageId")
@@ -37,6 +37,9 @@ interface MessageDao {
 
     @Query("DELETE FROM messages WHERE messageId = :messageId")
     suspend fun deleteMessageById(messageId: String)
+
+    @Query("DELETE FROM messages")
+    suspend fun deleteAllMessages()
 
 
 }

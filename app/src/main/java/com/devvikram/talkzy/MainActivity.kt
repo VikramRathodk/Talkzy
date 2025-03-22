@@ -24,6 +24,7 @@ import com.devvikram.talkzy.ui.screens.groupchatroom.GroupChatroomScreen
 import com.devvikram.talkzy.ui.screens.home.HomeScreen
 import com.devvikram.talkzy.ui.screens.onboarding.OnboardingNavGraph
 import com.devvikram.talkzy.ui.screens.personalChatroom.PersonalChatroomScreen
+import com.devvikram.talkzy.ui.screens.personalChatroom.PersonalProfileScreen
 import com.devvikram.talkzy.ui.theme.TalkzyTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -112,6 +113,26 @@ fun AppNavigationScreen(
                 receiverId = receiverId
             )
         }
+
+        composable(
+            route = HomeNavigationDestination.PersonalProfileDest("0", "0").route,
+            arguments = listOf(
+                navArgument("conversationId") { type = NavType.StringType },
+                navArgument("receiverId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val conversationId =
+                backStackEntry.arguments?.getString("conversationId") ?: return@composable
+            val receiverId = backStackEntry.arguments?.getString("receiverId") ?: return@composable
+
+            PersonalProfileScreen(
+                conversationId = conversationId,
+                appViewmodel = viewModel,
+                appLevelNavController = navController,
+                receiverId = receiverId
+            )
+        }
+
 
         composable(route = HomeNavigationDestination.GroupChatroomDest.route) {
             GroupChatroomScreen(

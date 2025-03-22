@@ -32,7 +32,9 @@ class ContactRepository(
          return contactsDao.getAllContactsWithFlow()
      }
 
-
+     suspend fun deleteAllContacts() {
+         contactsDao.deleteAllContacts()
+     }
 
 
  }

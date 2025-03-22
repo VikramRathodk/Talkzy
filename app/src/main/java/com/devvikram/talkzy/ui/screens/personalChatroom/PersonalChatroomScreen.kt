@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
@@ -38,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.devvikram.talkzy.AppViewModel
 import com.devvikram.talkzy.R
+import com.devvikram.talkzy.ui.navigation.HomeNavigationDestination
 import com.devvikram.talkzy.ui.reuseables.MessageInput
 import com.devvikram.talkzy.ui.reuseables.ProfileImage
 import com.devvikram.talkzy.ui.screens.personalChatroom.itemviews.ReceiverImageMessageBubble
@@ -60,21 +62,27 @@ fun PersonalChatroomScreen(
     Log.d(TAG, "Opening PersonalChatroomScreen with conversationId: $conversationId")
     Log.d(TAG, "PersonalChatroomScreen: ReceiverId : $receiverId")
 
-    // Runs only when `conversationId` changes
-    LaunchedEffect(conversationId) {
-        personalChatRoomViewmodel.setConversationId(conversationId)
-        personalChatRoomViewmodel.getReceiverInfo(receiverId)
-    }
+    val isDarkMode = isSystemInDarkTheme()
     val chatMessageList = personalChatRoomViewmodel.chatMessageList.collectAsStateWithLifecycle()
     val receiverProfile =
         personalChatRoomViewmodel.receiverUserProfile.collectAsStateWithLifecycle()
-
-    val isDarkMode = isSystemInDarkTheme()
+    val listState = rememberLazyListState()
     val backGroupResource = if (isDarkMode) {
         R.drawable.chat_bg_dark_blue
     } else {
         R.drawable.chat_bg_white_light_blue_pattern
     }
+    // Runs only when `conversationId` changes
+    LaunchedEffect(conversationId) {
+        personalChatRoomViewmodel.setConversationId(conversationId)
+        personalChatRoomViewmodel.getReceiverInfo(receiverId)
+    }
+    LaunchedEffect(chatMessageList.value.size) {
+        if (chatMessageList.value.isNotEmpty()) {
+            listState.animateScrollToItem(chatMessageList.value.lastIndex)
+        }
+    }
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -85,16 +93,21 @@ fun PersonalChatroomScreen(
                 onBackClick = { appLevelNavController.popBackStack() },
                 onCallClick = { },
                 onVideoCallClick = { },
-                onMoreOptionsClick = {  }
+                onMoreOptionsClick = { },
+                onClick = {
+                    appLevelNavController.navigate(
+                        HomeNavigationDestination.PersonalProfileDest.createRoute(
+                            conversationId,
+                            receiverId
+                        )
+                    )
+                }
             )
-
         },
         bottomBar = {
             MessageInput(
                 modifier = Modifier.navigationBarsPadding(),
-                onMessageSend = { message ->
-                    personalChatRoomViewmodel.sendMessage(message)
-                },
+                onMessageSend = { message -> personalChatRoomViewmodel.sendMessage(message) },
                 onCameraClick = {},
                 onAttachmentClick = {}
             )
@@ -122,6 +135,7 @@ fun PersonalChatroomScreen(
         ) {
             // Messages List
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .weight(1f),
                 reverseLayout = false

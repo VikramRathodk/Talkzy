@@ -66,10 +66,14 @@ class LoginPreference(private val context: Context) {
     }
 
     fun setOnBoardingCompleted(isOnBoardingCompleted: Boolean) {
-        sharedPreferences.edit() { putBoolean(IS_ONBOARD_COMPLETED, isOnBoardingCompleted) }
+        sharedPreferences.edit { putBoolean(IS_ONBOARD_COMPLETED, isOnBoardingCompleted) }
     }
     fun isOnBoardingCompleted(): Boolean? {
         return sharedPreferences.getBoolean(IS_ONBOARD_COMPLETED, false)
+    }
+
+    fun clear() {
+        sharedPreferences.edit { clear() }
     }
 
 

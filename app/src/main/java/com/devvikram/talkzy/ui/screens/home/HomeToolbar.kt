@@ -124,6 +124,7 @@ fun HomeToolbar(
                 appViewModel.loginPreference.setLoggedIn(false)
                 appViewModel.loginPreference.setOnBoardingCompleted(true)
                 appViewModel._isOnBoardingCompleted.value = true
+                appViewModel.clearLocalDatabase()
                 showLogoutDialog = false
             },
             onDismiss = {

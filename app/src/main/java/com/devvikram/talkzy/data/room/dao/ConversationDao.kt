@@ -30,5 +30,8 @@ interface ConversationDao  {
     @Query("SELECT * FROM conversations")
     fun getConversationWithContactFlow(): Flow<List<ConversationWithContacts>>
 
+    @Query("DELETE FROM conversations")
+    suspend fun deleteAllConversations()
+
 
 }

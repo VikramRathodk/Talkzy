@@ -19,6 +19,7 @@ interface ParticipantDao {
         conversationId: String
     ): List<RoomParticipant>
 
-
+    @Query("DELETE FROM participants")
+    suspend fun deleteAllParticipants()
 
 }

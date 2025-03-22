@@ -55,5 +55,9 @@ class ConversationRepository @Inject constructor(
         return conversationDao.getConversationWithContactFlow()
     }
 
+   suspend fun deleteAllConversations() {
+       conversationDao.deleteAllConversations()
+   }
+
 
 }
