@@ -18,7 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PersonalProfileViewModel @Inject constructor(
     @ApplicationContext context: Context,
-    private val contactRepository: ContactRepository
+    private val contactRepository: ContactRepository,
 
 ) : ViewModel() {
 
