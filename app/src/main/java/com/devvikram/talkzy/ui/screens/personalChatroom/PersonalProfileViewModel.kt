@@ -30,6 +30,7 @@ class PersonalProfileViewModel @Inject constructor(
     fun setUserId(userId: String) {
         _userId.value = userId
         viewModelScope.launch {
+
             _userId.collectLatest {
                 getUserDetails(it)
             }
