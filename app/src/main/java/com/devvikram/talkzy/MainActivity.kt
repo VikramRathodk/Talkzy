@@ -5,9 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -19,12 +16,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.devvikram.talkzy.ui.navigation.HomeNavigationDestination
-import com.devvikram.talkzy.ui.navigation.OnboardingDestination
 import com.devvikram.talkzy.ui.screens.groupchatroom.GroupChatroomScreen
 import com.devvikram.talkzy.ui.screens.home.HomeScreen
 import com.devvikram.talkzy.ui.screens.onboarding.OnboardingNavGraph
 import com.devvikram.talkzy.ui.screens.personalChatroom.PersonalChatroomScreen
-import com.devvikram.talkzy.ui.screens.personalChatroom.PersonalProfileScreen
+import com.devvikram.talkzy.ui.screens.personalChatroom.profile.PersonalProfileScreen
 import com.devvikram.talkzy.ui.theme.TalkzyTheme
 import dagger.hilt.android.AndroidEntryPoint
 

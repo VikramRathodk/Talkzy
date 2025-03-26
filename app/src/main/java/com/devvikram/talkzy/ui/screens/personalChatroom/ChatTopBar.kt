@@ -58,6 +58,7 @@ fun ChatTopBar(
                 // Profile Picture
                 ProfileImage(
                     imagePath = receiverProfile?.localProfilePicturePath,
+
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)

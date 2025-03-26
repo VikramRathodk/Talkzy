@@ -19,7 +19,7 @@ import com.devvikram.talkzy.R
 fun ProfileImage(
     imagePath: String?,
     modifier: Modifier = Modifier,
-    placeholderRes: Int = R.drawable.ic_launcher_foreground,
+    placeholderRes: Int = R.drawable.person_icon_3d,
     contentDescription: String = "Profile Picture",
 ) {
     AsyncImage(
