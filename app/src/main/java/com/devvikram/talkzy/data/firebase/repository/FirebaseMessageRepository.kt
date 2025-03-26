@@ -32,11 +32,14 @@ class FirebaseMessageRepository @Inject constructor(
             getMessageCollection(conversationId, datePartition)
 
 
-        messageCollectionRef.add(message).addOnSuccessListener {
-            logger.info("Message added with ID: ${it.id}")
-        }.addOnFailureListener {
-            logger.severe("Error adding message: ${it.message}")  // Handle the error appropriately
-        }
+        messageCollectionRef.document(message.messageId).set(message)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    logger.info("Message inserted successfully: ${message.messageId}")
+                } else {
+                    logger.severe("Error inserting message: ${it.exception?.message}")
+                }
+            }
     }
 
     suspend fun updateMessageInFirebase(message: ChatMessage,datePartition: String) {

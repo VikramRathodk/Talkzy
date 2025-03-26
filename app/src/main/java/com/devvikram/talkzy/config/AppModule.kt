@@ -120,7 +120,6 @@ object AppModule {
         @ApplicationContext context: Context
     ) = MessageRepository(
         messageDao = messageDao,
-        firebaseFirestore = firebaseFirestore,
         firebaseMessageRepository = firebaseMessageRepository,
         context = context
     )

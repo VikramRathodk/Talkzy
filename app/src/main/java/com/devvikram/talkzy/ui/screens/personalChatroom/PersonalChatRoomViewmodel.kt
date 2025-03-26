@@ -146,7 +146,7 @@ class PersonalChatRoomViewmodel @Inject constructor(
 
     fun sendMessage(message: String) {
         Log.d(TAG, "sendMessage called with message: $message")
-        Log.d(TAG, "sendMessage: conversationId = ${conversationId}")
+        Log.d(TAG, "sendMessage: conversationId = ${_conversationId.value}")
 
         viewModelScope.launch {
             try {
@@ -216,7 +216,7 @@ class PersonalChatRoomViewmodel @Inject constructor(
         senderUserId: String,
         receiverUserId: String
     ) {
-        Log.d(TAG, "createNewConversationAndSendMessage:sender $senderUserId receiver $receiverUserId")
+        Log.d(TAG, "sendMessage createNewConversationAndSendMessage:sender $senderUserId receiver $receiverUserId")
         val newConversationId =
             firestore.collection(FirebaseConstant.FIRESTORE_CONVERSATION_COLLECTION).document().id
 
@@ -248,7 +248,7 @@ class PersonalChatRoomViewmodel @Inject constructor(
             )
         }
 
-        Log.d(TAG, "Creating new conversation: $conversation")
+        Log.d(TAG, "sendMessage Creating new conversation: $conversation")
 
         conversationRepository.createConversationWithMessage(
             conversation,

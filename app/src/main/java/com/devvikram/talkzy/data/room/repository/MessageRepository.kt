@@ -16,7 +16,6 @@ import javax.inject.Singleton
 
 @Singleton
 class MessageRepository @Inject constructor(
-    private val firebaseFirestore: FirebaseFirestore,
     private val messageDao: MessageDao,
     private val firebaseMessageRepository: FirebaseMessageRepository,
     @ApplicationContext private val context: Context
