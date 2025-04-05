@@ -27,11 +27,14 @@ interface ConversationDao  {
     suspend fun deleteConversation(conversationId: String)
 
     @Transaction
-    @Query("SELECT * FROM conversations")
+    @Query("SELECT * FROM conversations ORDER BY lastModifiedAt Desc")
     fun getConversationWithContactFlow(): Flow<List<ConversationWithContacts>>
 
     @Query("DELETE FROM conversations")
     suspend fun deleteAllConversations()
 
+    @Transaction
+    @Query("SELECT * FROM conversations WHERE conversationId = :conversationId ")
+    fun getConversationByConversationIdFlow(conversationId: String): Flow<ConversationWithContacts>
 
 }

@@ -14,10 +14,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+
 import androidx.navigation.NavHostController
-import com.devvikram.talkzy.data.room.models.LastMessage
 import com.devvikram.talkzy.ui.navigation.HomeNavigationDestination
 import com.devvikram.talkzy.ui.screens.HomeViewmodel
+import com.devvikram.talkzy.ui.screens.conversations.filters.FilterOptionsBar
 import com.devvikram.talkzy.ui.screens.conversations.itemviews.GroupConversationItemCard
 import com.devvikram.talkzy.ui.screens.conversations.itemviews.PersonalConversationItemCard
 
@@ -41,11 +43,19 @@ fun ConversationsScreen(
             .fillMaxSize()
             .padding(8.dp)
     ) {
+        // filter options
+        item {
+            FilterOptionsBar(conversationViewmodel = conversationViewmodel)
+        }
+
         // conversations iist
         items(conversations.value) { item ->
             val conversation = item.conversation
             val contact = item.contact
             Log.d(TAG, "ConversationsScreen: contact $contact")
+            val lastMessage by conversationViewmodel.getLastMessageFlow(conversation.conversationId ).collectAsState(initial = null)
+
+            val unReadMessageCount by conversationViewmodel.getUnreadMessageCountFlow(conversation.conversationId).collectAsState(initial = 0)
 
             val conversationItem = when (conversation.type) {
                 "P" -> {
@@ -53,16 +63,10 @@ fun ConversationsScreen(
                         conversationId = conversation.conversationId,
                         userId = contact?.userId ?: "",
                         name = contact?.name.toString(),
-                        unreadMessageCount = 0,
+                        unreadMessageCount = unReadMessageCount,
                         selected = false,
                         timeStamp = conversation.createdAt,
-                        lastMessage = LastMessage(
-                            text = "Nice I'll do that.",
-                            type = "IMAGE",
-                            senderId = conversation.userId,
-                            timestamp = conversation.createdAt,
-                            mediaUrl = "",
-                        )
+                        lastMessage = lastMessage,
                     )
                 }
 
@@ -70,17 +74,11 @@ fun ConversationsScreen(
                     ConversationItem.GroupConversation(
                         conversationId = conversation.conversationId,
                         groupTitle = conversation.name.toString(),
-                        unreadMessageCount = 0,
+                        unreadMessageCount = unReadMessageCount,
                         participants = conversation.participantIds,
                         selected = false,
                         timeStamp = conversation.createdAt,
-                        lastMessage = LastMessage(
-                            text = "Hello, How are you?",
-                            type = "VIDEO",
-                            senderId = conversation.userId,
-                            timestamp = conversation.createdAt,
-                            mediaUrl = "",
-                        )
+                        lastMessage = lastMessage
                     )
                 }
 
@@ -112,7 +110,11 @@ fun ConversationsScreen(
                         homeNavigationController = homeNavigationController,
                         onClick = {
                             Toast.makeText(context, "Group Clicked", Toast.LENGTH_SHORT).show()
-                            appLevelNavController.navigate(HomeNavigationDestination.GroupChatroomDest.route)
+                            appLevelNavController.navigate(
+                                HomeNavigationDestination.GroupChatroomDest.createRoute(
+                                    conversationItem.conversationId,
+                                )
+                            )
                         }
                     )
                 }

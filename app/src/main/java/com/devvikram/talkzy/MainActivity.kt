@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,7 +17,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.devvikram.talkzy.ui.navigation.HomeNavigationDestination
+import com.devvikram.talkzy.ui.screens.creategroup.CreateGroupScreen
 import com.devvikram.talkzy.ui.screens.groupchatroom.GroupChatroomScreen
+import com.devvikram.talkzy.ui.screens.groupchatroom.profile.GroupProfileScreen
+import com.devvikram.talkzy.ui.screens.groupchatroom.profile.GroupProfileViewModel
 import com.devvikram.talkzy.ui.screens.home.HomeScreen
 import com.devvikram.talkzy.ui.screens.onboarding.OnboardingNavGraph
 import com.devvikram.talkzy.ui.screens.personalChatroom.PersonalChatroomScreen
@@ -129,9 +133,42 @@ fun AppNavigationScreen(
             )
         }
 
+        composable(
+            route = HomeNavigationDestination.GroupProfile("0").route,
+            arguments = listOf(
+                navArgument("conversationId") { type = NavType.StringType },
+            )
+        ) {
+            backStackEntry ->
+            val groupProfileViewModel = hiltViewModel<GroupProfileViewModel>()
+            val conversationId =
+                backStackEntry.arguments?.getString("conversationId") ?: return@composable
+            GroupProfileScreen(
+                conversationId = conversationId,
+                appLevelNavController = navController,
+                groupProfileViewModel  = groupProfileViewModel,
+            )
+        }
 
-        composable(route = HomeNavigationDestination.GroupChatroomDest.route) {
+
+        composable(
+            route = HomeNavigationDestination.GroupChatroomDest("0").route,
+            arguments = listOf(
+                navArgument("conversationId") { type = NavType.StringType },
+            )
+        ) { backStackEntry ->
+            val conversationId =
+                backStackEntry.arguments?.getString("conversationId") ?: return@composable
+
             GroupChatroomScreen(
+                appViewmodel = viewModel,
+                appLevelNavController = navController,
+                conversationId = conversationId,
+            )
+        }
+
+        composable(route = HomeNavigationDestination.CreateGroupDest.route) {
+            CreateGroupScreen(
                 appViewmodel = viewModel,
                 appLevelNavController = navController,
             )

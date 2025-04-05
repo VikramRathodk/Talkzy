@@ -13,6 +13,7 @@ import com.devvikram.talkzy.data.firebase.models.Conversation
 import com.devvikram.talkzy.data.firebase.models.FirebaseContact
 import com.devvikram.talkzy.data.firebase.repository.FirebaseContactRepository
 import com.devvikram.talkzy.data.firebase.repository.FirebaseMessageRepository
+import com.devvikram.talkzy.data.room.models.RoomParticipant
 import com.devvikram.talkzy.data.room.repository.ContactRepository
 import com.devvikram.talkzy.data.room.repository.ConversationRepository
 import com.devvikram.talkzy.data.room.repository.MessageRepository
@@ -84,7 +85,7 @@ class AppViewModel @Inject constructor(
 
                     viewModelScope.launch {
                         when (it.type) {
-                            com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
+                            DocumentChange.Type.ADDED -> {
                                 println("contact: Document added: ${it.document.data}")
                                 contactRepository.insertContact(
                                     ModelMapper.toRoomContact(
@@ -122,6 +123,7 @@ class AppViewModel @Inject constructor(
         println("Listening to conversation")
         conversationListenerRegistration =
             firebaseFirestore.collection(FirebaseConstant.FIRESTORE_CONVERSATION_COLLECTION)
+                .whereArrayContains("participantIds", loginPreference.getUserId())
                 .addSnapshotListener { snapShots, e ->
                     if (e != null) {
                         println("Listen failed: ${e.message}")
@@ -136,7 +138,7 @@ class AppViewModel @Inject constructor(
 
                         viewModelScope.launch {
                             when (it.type) {
-                                com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
+                                DocumentChange.Type.ADDED -> {
                                     println("Document added: ${it.document.data}")
                                     conversationRepository.insertConversation(
                                         ModelMapper.toRoomConversation(
@@ -144,6 +146,16 @@ class AppViewModel @Inject constructor(
                                             loginPreference.getUserId()
                                         )
                                     )
+                                    // 2. Save participants
+                                    val roomParticipants = conversation.participants.map { p ->
+                                        RoomParticipant(
+                                            conversationId = conversation.conversationId,
+                                            userId = p.userId,
+                                            localParticipantId = 0,
+                                            role = p.role,
+                                        )
+                                    }
+                                    participantRepository.insertAllParticipants(roomParticipants)
                                     if (conversation.type == "P") {
                                         val loggedInUserId = loginPreference.getUserId()
                                         val receiverId =
@@ -168,9 +180,18 @@ class AppViewModel @Inject constructor(
                                     }
                                 }
 
-                                com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
+                                DocumentChange.Type.MODIFIED -> {
                                     println("Document modified: ${it.document.data}")
-
+                                    // 2. Save participants
+                                    val roomParticipants = conversation.participants.map { p ->
+                                        RoomParticipant(
+                                            conversationId = conversation.conversationId,
+                                            userId = p.userId,
+                                            localParticipantId = 0,
+                                            role = p.role,
+                                        )
+                                    }
+                                    participantRepository.insertAllParticipants(roomParticipants)
                                     conversationRepository.insertConversation(
                                         ModelMapper.toRoomConversation(
                                             conversation,
@@ -179,9 +200,10 @@ class AppViewModel @Inject constructor(
                                     )
                                 }
 
-                                com.google.firebase.firestore.DocumentChange.Type.REMOVED -> {
+                                 DocumentChange.Type.REMOVED -> {
                                     println("Document removed: ${it.document.data}")
                                     conversationRepository.deleteConversation(conversation.conversationId)
+                                     participantRepository.deleteParticipantsByConversationId(conversation.conversationId)
                                 }
 
                                 else -> {
@@ -322,8 +344,7 @@ class AppViewModel @Inject constructor(
                 chatMessage = message,
                 existingMessage = existingMessage
             )
-
-
+            messageRepository.insertMessage(updatedMessage)
         } else {
             messageRepository.insertMessage(ModelMapper.mapToRoomMessage(message))
         }

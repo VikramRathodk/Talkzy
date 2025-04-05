@@ -62,16 +62,12 @@ object AppModule {
     fun provideConversationRepository(
         conversationDao: ConversationDao,
         firebaseConversationRepository: FirebaseConversationRepository,
-        firestore: FirebaseFirestore,
         @ApplicationContext context: Context,
         participantRepository: ParticipantRepository,
-        messageRepository: MessageRepository
     ) = ConversationRepository(
         conversationDao = conversationDao,
-        messageRepository = messageRepository,
         participantRepository = participantRepository,
         firebaseConversationRepository = firebaseConversationRepository,
-        firestore = firestore
     )
 
     @Provides
@@ -115,13 +111,14 @@ object AppModule {
     @Singleton
     fun provideMessageRepository(
         messageDao: MessageDao,
-        firebaseFirestore: FirebaseFirestore,
         firebaseMessageRepository: FirebaseMessageRepository,
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        loginPreference: LoginPreference
     ) = MessageRepository(
         messageDao = messageDao,
         firebaseMessageRepository = firebaseMessageRepository,
-        context = context
+        context = context,
+        loginPreference = loginPreference
     )
 
 

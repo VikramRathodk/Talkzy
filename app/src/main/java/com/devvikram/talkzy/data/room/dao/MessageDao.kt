@@ -3,6 +3,7 @@ package com.devvikram.talkzy.data.room.dao
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
+import com.devvikram.talkzy.data.room.models.LastMessage
 import com.devvikram.talkzy.data.room.models.RoomMessage
 import kotlinx.coroutines.flow.Flow
 
@@ -41,5 +42,7 @@ interface MessageDao {
     @Query("DELETE FROM messages")
     suspend fun deleteAllMessages()
 
+    @Query("SELECT * FROM messages WHERE conversationId = :conversationId ORDER BY timestamp DESC LIMIT 1")
+    fun getLastMessageWithFlow(conversationId: String): Flow<RoomMessage?>
 
 }

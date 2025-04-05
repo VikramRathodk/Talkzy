@@ -50,9 +50,9 @@ fun SenderTextMessageBubble(
     var isExpanded by remember { mutableStateOf(false) }
 
     val icon = when {
-        message.isReadBy.isNotEmpty() -> Icons.Default.CheckCircle // Read
-        message.isReceivedBy.isNotEmpty() -> Icons.Default.Check // Delivered
-        else -> Icons.Default.CheckCircle // Sent (Pending)
+        message.isReadBy.isNotEmpty() -> Icons.Default.CheckCircle
+        message.isReceivedBy.isNotEmpty() -> Icons.Default.Check
+        else -> Icons.Default.CheckCircle
     }
 
     Box(

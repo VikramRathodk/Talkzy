@@ -47,80 +47,6 @@ class PersonalChatRoomViewmodel @Inject constructor(
 
     fun setConversationId(conversationId: String) {
         _conversationId.value = conversationId
-        viewModelScope.launch {
-            messageRepository.getMessageByConversationIdWithFlow(_conversationId.value)
-                .collectLatest { messages ->
-                    _chatMessageList.value = messages.mapNotNull { roomMessage ->
-                        when (roomMessage.messageType) {
-                            MessageType.TEXT.name -> {
-                                if (roomMessage.senderId == loginPreference.getUserId()) {
-                                    PersonalChatMessageItem.SenderTextMessageItem(
-                                        messageId = roomMessage.messageId,
-                                        conversationId = roomMessage.conversationId,
-                                        senderId = roomMessage.senderId,
-                                        senderName = roomMessage.senderName ?: "Unknown",
-                                        text = roomMessage.text.orEmpty(),
-                                        timestamp = roomMessage.timestamp,
-                                        isEdited = roomMessage.isEdited,
-                                        replyToMessageId = roomMessage.replyToMessageId,
-                                        isReadBy = roomMessage.isReadBy,
-                                        isReceivedBy = roomMessage.isReceivedBy
-                                    )
-                                } else {
-                                    PersonalChatMessageItem.ReceiverTextMessageItem(
-                                        messageId = roomMessage.messageId,
-                                        conversationId = roomMessage.conversationId,
-                                        senderId = roomMessage.senderId,
-                                        senderName = roomMessage.senderName ?: "Unknown",
-                                        text = roomMessage.text.orEmpty(),
-                                        timestamp = roomMessage.timestamp,
-                                        isEdited = roomMessage.isEdited,
-                                        replyToMessageId = roomMessage.replyToMessageId,
-                                        isReadBy = roomMessage.isReadBy,
-                                        isReceivedBy = roomMessage.isReceivedBy
-                                    )
-                                }
-                            }
-
-                            MessageType.IMAGE.name -> {
-                                if (roomMessage.senderId == loginPreference.getUserId()) {
-                                    PersonalChatMessageItem.SenderImageMessageItem(
-                                        messageId = roomMessage.messageId,
-                                        conversationId = roomMessage.conversationId,
-                                        senderId = roomMessage.senderId,
-                                        senderName = roomMessage.senderName ?: "Unknown",
-                                        imageUrl = roomMessage.mediaUrl.orEmpty(),
-                                        timestamp = roomMessage.timestamp,
-                                        mediaSize = roomMessage.mediaSize,
-                                        thumbnailUrl = roomMessage.thumbnailUrl,
-                                        isUploaded = roomMessage.isUploaded,
-                                        isDownloaded = roomMessage.isDownloaded,
-                                        isReadBy = roomMessage.isReadBy,
-                                        isReceivedBy = roomMessage.isReceivedBy
-                                    )
-                                } else {
-                                    PersonalChatMessageItem.ReceiverImageMessageItem(
-                                        messageId = roomMessage.messageId,
-                                        conversationId = roomMessage.conversationId,
-                                        senderId = roomMessage.senderId,
-                                        senderName = roomMessage.senderName ?: "Unknown",
-                                        imageUrl = roomMessage.mediaUrl.orEmpty(),
-                                        timestamp = roomMessage.timestamp,
-                                        mediaSize = roomMessage.mediaSize,
-                                        thumbnailUrl = roomMessage.thumbnailUrl,
-                                        isUploaded = roomMessage.isUploaded,
-                                        isDownloaded = roomMessage.isDownloaded,
-                                        isReadBy = roomMessage.isReadBy,
-                                        isReceivedBy = roomMessage.isReceivedBy
-                                    )
-                                }
-                            }
-
-                            else -> if (_isTyping.value) PersonalChatMessageItem.TypingIndicator else null
-                        }
-                    }
-                }
-        }
     }
 
     internal val _isTyping = MutableStateFlow<Boolean>(false)
@@ -140,7 +66,88 @@ class PersonalChatRoomViewmodel @Inject constructor(
             .onEach { _loggedUser.value = it }
             .launchIn(viewModelScope)
 
+        viewModelScope.launch {
+            _conversationId.collectLatest {
+                getMessages()
+            }
+        }
+    }
 
+    private suspend fun getMessages() {
+
+        messageRepository.getMessageByConversationIdWithFlow(_conversationId.value)
+            .collectLatest { messages ->
+                _chatMessageList.value = messages.mapNotNull { roomMessage ->
+                    when (roomMessage.messageType) {
+                        MessageType.TEXT.name -> {
+                            if (roomMessage.senderId == loginPreference.getUserId()) {
+                                PersonalChatMessageItem.SenderTextMessageItem(
+                                    messageId = roomMessage.messageId,
+                                    conversationId = roomMessage.conversationId,
+                                    senderId = roomMessage.senderId,
+                                    senderName = roomMessage.senderName ?: "Unknown",
+                                    text = roomMessage.text.orEmpty(),
+                                    timestamp = roomMessage.timestamp,
+                                    isEdited = roomMessage.isEdited,
+                                    replyToMessageId = roomMessage.replyToMessageId,
+                                    isReadBy = roomMessage.isReadBy,
+                                    isReceivedBy = roomMessage.isReceivedBy
+                                )
+                            } else {
+                                PersonalChatMessageItem.ReceiverTextMessageItem(
+                                    messageId = roomMessage.messageId,
+                                    conversationId = roomMessage.conversationId,
+                                    senderId = roomMessage.senderId,
+                                    senderName = roomMessage.senderName ?: "Unknown",
+                                    text = roomMessage.text.orEmpty(),
+                                    timestamp = roomMessage.timestamp,
+                                    isEdited = roomMessage.isEdited,
+                                    replyToMessageId = roomMessage.replyToMessageId,
+                                    isReadBy = roomMessage.isReadBy,
+                                    isReceivedBy = roomMessage.isReceivedBy
+                                )
+                            }
+                        }
+
+                        MessageType.IMAGE.name -> {
+                            if (roomMessage.senderId == loginPreference.getUserId()) {
+                                PersonalChatMessageItem.SenderImageMessageItem(
+                                    messageId = roomMessage.messageId,
+                                    conversationId = roomMessage.conversationId,
+                                    senderId = roomMessage.senderId,
+                                    senderName = roomMessage.senderName ?: "Unknown",
+                                    imageUrl = roomMessage.mediaUrl.orEmpty(),
+                                    timestamp = roomMessage.timestamp,
+                                    mediaSize = roomMessage.mediaSize,
+                                    thumbnailUrl = roomMessage.thumbnailUrl,
+                                    isUploaded = roomMessage.isUploaded,
+                                    isDownloaded = roomMessage.isDownloaded,
+                                    isReadBy = roomMessage.isReadBy,
+                                    isReceivedBy = roomMessage.isReceivedBy
+                                )
+                            } else {
+                                PersonalChatMessageItem.ReceiverImageMessageItem(
+                                    messageId = roomMessage.messageId,
+                                    conversationId = roomMessage.conversationId,
+                                    senderId = roomMessage.senderId,
+                                    senderName = roomMessage.senderName ?: "Unknown",
+                                    imageUrl = roomMessage.mediaUrl.orEmpty(),
+                                    timestamp = roomMessage.timestamp,
+                                    mediaSize = roomMessage.mediaSize,
+                                    thumbnailUrl = roomMessage.thumbnailUrl,
+                                    isUploaded = roomMessage.isUploaded,
+                                    isDownloaded = roomMessage.isDownloaded,
+                                    isReadBy = roomMessage.isReadBy,
+                                    isReceivedBy = roomMessage.isReceivedBy
+                                )
+                            }
+                        }
+
+                        else -> if (_isTyping.value) PersonalChatMessageItem.TypingIndicator else null
+                    }
+                }
+
+            }
     }
 
 
@@ -216,7 +223,10 @@ class PersonalChatRoomViewmodel @Inject constructor(
         senderUserId: String,
         receiverUserId: String
     ) {
-        Log.d(TAG, "sendMessage createNewConversationAndSendMessage:sender $senderUserId receiver $receiverUserId")
+        Log.d(
+            TAG,
+            "sendMessage createNewConversationAndSendMessage:sender $senderUserId receiver $receiverUserId"
+        )
         val newConversationId =
             firestore.collection(FirebaseConstant.FIRESTORE_CONVERSATION_COLLECTION).document().id
 
@@ -263,8 +273,9 @@ class PersonalChatRoomViewmodel @Inject constructor(
     fun getReceiverInfo(receiverId: String) {
         viewModelScope.launch {
             println("personal: getCurrentReceiver called ${receiverId}")
-            val data = contactRepository.getContactById(receiverId)
-            _receiverUserProfile.value = data
+            contactRepository.getContactByUserIdWithFlow(receiverId).collectLatest {
+                _receiverUserProfile.value = it
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import com.devvikram.talkzy.data.firebase.models.Conversation
 import com.devvikram.talkzy.data.firebase.models.FirebaseContact
 import com.devvikram.talkzy.data.firebase.models.ForwardMetadata
 import com.devvikram.talkzy.data.firebase.models.Participant
+import com.devvikram.talkzy.data.room.models.LastMessage
 import com.devvikram.talkzy.data.room.models.RoomContact
 import com.devvikram.talkzy.data.room.models.RoomConversation
 import com.devvikram.talkzy.data.room.models.RoomForwardMetadata
@@ -193,4 +194,27 @@ object ModelMapper {
             lastModifiedAt = roomMessage.lastModifiedAt
         )
     }
+
+    fun mapToLastMessage(roomMessage: RoomMessage?): LastMessage {
+        return if (roomMessage != null) {
+            LastMessage(
+                text = roomMessage.text.orEmpty(),
+                type = roomMessage.messageType,
+                senderId = roomMessage.senderId,
+                timestamp = roomMessage.timestamp,
+                mediaUrl = roomMessage.mediaUrl,
+                mediaType = roomMessage.mediaType,
+            )
+        } else {
+            LastMessage(
+                text = "",
+                type = "",
+                senderId = "",
+                timestamp = 0L,
+                mediaUrl = "",
+                mediaType = ""
+            )
+        }
+    }
+
 }

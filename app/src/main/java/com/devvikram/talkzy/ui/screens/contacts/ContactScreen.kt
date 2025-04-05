@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -31,9 +32,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import coil3.compose.AsyncImage
+import com.devvikram.talkzy.R
 import com.devvikram.talkzy.data.room.models.RoomContact
 import com.devvikram.talkzy.ui.navigation.HomeNavigationDestination
 import com.devvikram.talkzy.ui.reuseables.ProfileImage
@@ -78,9 +82,27 @@ fun ContactScreen(
             contentPadding = paddingValues,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+
+            item {
+                HeaderRow(
+                    label = "Create New Group",
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.group_icon),
+                            contentDescription = "Create New Group"
+                        )
+                    },
+                    onClick = {
+                        appLevelNavController.navigate(
+                            HomeNavigationDestination.CreateGroupDest.route
+                        )
+                    }
+                )
+            }
+
             items(contacts.value) { contact ->
                 Log.d(TAG, "ContactScreen: $contact")
-                ContactItem(contact){
+                ContactItem(contact = contact){
                     appLevelNavController.navigate(HomeNavigationDestination.PersonalChatroomDest.createRoute(
                         conversationId = contact.conversationId,
                         receiverId = contact.userId
@@ -92,47 +114,3 @@ fun ContactScreen(
 
 }
 
-@Composable
-fun ContactItem(
-    contact: RoomContact,
-    navigateToPersonalChatroom: () -> Unit = {}
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clickable(onClick = navigateToPersonalChatroom),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Profile Image
-        ProfileImage(
-            imagePath = contact.profilePicture,
-            modifier = Modifier.padding(end = 12.dp)
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // Contact Details
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = contact.name,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = contact.mobileNumber,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        // Online Status Indicator
-        if (contact.isOnline) {
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape)
-            )
-        }
-    }
-}

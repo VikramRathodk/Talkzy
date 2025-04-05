@@ -4,13 +4,18 @@ import android.content.Context
 import android.util.Log
 import com.devvikram.talkzy.AppUtils
 import com.devvikram.talkzy.config.ModelMapper
+import com.devvikram.talkzy.config.constants.LoginPreference
 import com.devvikram.talkzy.data.firebase.repository.FirebaseMessageRepository
 import com.devvikram.talkzy.data.room.dao.MessageDao
+import com.devvikram.talkzy.data.room.models.LastMessage
 import com.devvikram.talkzy.data.room.models.RoomConversation
 import com.devvikram.talkzy.data.room.models.RoomMessage
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,7 +23,8 @@ import javax.inject.Singleton
 class MessageRepository @Inject constructor(
     private val messageDao: MessageDao,
     private val firebaseMessageRepository: FirebaseMessageRepository,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val loginPreference: LoginPreference
 ) {
     suspend fun insertNewMessage(
         roomMessage: RoomMessage,
@@ -79,6 +85,7 @@ class MessageRepository @Inject constructor(
         messageDao.updateLastModifiedAt(messageId, currentTime)
 
     }
+
     suspend fun deleteMessageById(messageId: String) {
         messageDao.deleteMessageById(messageId)
     }
@@ -87,5 +94,19 @@ class MessageRepository @Inject constructor(
     suspend fun deleteAllMessages() {
         messageDao.deleteAllMessages()
 
+    }
+
+
+    fun getLastMessageFlow(conversationId: String): Flow<RoomMessage?> {
+        return messageDao.getLastMessageWithFlow(conversationId)
+    }
+
+    fun getUnreadMessageCountFlow(conversationId: String): Flow<Int> {
+        return messageDao.getMessagesByConversationIdWithFlow(conversationId)
+            .map { messages ->
+                messages.count { message ->
+                    !message.isReadBy.containsKey(loginPreference.getUserId())
+                }
+            }
     }
 }

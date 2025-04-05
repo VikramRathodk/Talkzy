@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -89,6 +88,7 @@ fun RegisterScreen(
         start = Offset.Zero,
         end = Offset.Infinite
     )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -101,7 +101,7 @@ fun RegisterScreen(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(24.dp),
-            color = Color.White.copy(alpha = 0.2f),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.2f),
             tonalElevation = 48.dp
         ) {
             Column(
@@ -114,13 +114,13 @@ fun RegisterScreen(
                 Text(
                     "Create Account",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     "Sign up to get started",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -145,7 +145,8 @@ fun RegisterScreen(
                     icon = Icons.Default.Lock,
                     isPassword = true,
                     isPasswordVisible = isPasswordVisible,
-                    onPasswordToggle = { isPasswordVisible = !isPasswordVisible })
+                    onPasswordToggle = { isPasswordVisible = !isPasswordVisible }
+                )
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
@@ -159,29 +160,37 @@ fun RegisterScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp)),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.3f))
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                    )
                 ) {
                     if (signUpState is AuthenticationViewmodel.SignUpState.Loading) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
-                        Text("Sign Up", fontSize = 18.sp, color = Color.White)
+                        Text("Sign Up", fontSize = 18.sp, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
+
                 Spacer(modifier = Modifier.height(24.dp))
+
                 Row {
-                    Text("Already have an account?", color = Color.White)
+                    Text("Already have an account?", color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         "Sign In",
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.clickable { navController.navigate(OnboardingDestination.Login.route) })
+                        modifier = Modifier.clickable {
+                            navController.navigate(OnboardingDestination.Login.route)
+                        }
+                    )
                 }
             }
         }
     }
 }
+
 
