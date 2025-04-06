@@ -127,9 +127,9 @@ fun AppNavigationScreen(
 
             PersonalProfileScreen(
                 conversationId = conversationId,
-                appViewmodel = viewModel,
+                appViewModel = viewModel,
                 appLevelNavController = navController,
-                receiverId = receiverId
+                receiverId = receiverId,
             )
         }
 
