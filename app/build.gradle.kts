@@ -126,6 +126,10 @@ dependencies {
     implementation("com.exyte:animated-navigation-bar:1.0.0")
 
 
+    // webrtc sdk
+    implementation("io.getstream:stream-webrtc-android:1.3.8")
+
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
