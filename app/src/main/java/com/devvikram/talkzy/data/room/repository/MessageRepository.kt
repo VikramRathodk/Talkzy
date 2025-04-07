@@ -28,27 +28,11 @@ class MessageRepository @Inject constructor(
 ) {
     suspend fun insertNewMessage(
         roomMessage: RoomMessage,
-        conversation: RoomConversation,
     ) {
         try {
-            val datePartition = AppUtils.getDatePartition(System.currentTimeMillis())
-            Log.d("InsertNewMessage", "Calculated date partition: $datePartition")
-
-            val newMessage = roomMessage.copy(datePartition = datePartition)
-            Log.d("InsertNewMessage", "New message object: $newMessage")
-
             // Insert into local database
-            messageDao.insertMessage(newMessage)
+            messageDao.insertMessage(roomMessage)
             Log.d("InsertNewMessage", "Message inserted into local database")
-
-            // Insert into Firestore
-            firebaseMessageRepository.insertMessage(
-                datePartition = datePartition,
-                conversationId = conversation.conversationId,
-                message = ModelMapper.mapToChatMessage(newMessage),
-            )
-            Log.d("InsertNewMessage", "Message inserted into Firestore successfully")
-
         } catch (e: Exception) {
             Log.e("InsertNewMessage", "Error inserting message: ${e.message}", e)
         }

@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.request.error
+import com.devvikram.talkzy.R
 
 @Composable
 fun Avatar(
@@ -39,6 +41,7 @@ fun Avatar(
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(url)
+                    .error(R.drawable.baseline_person_24)
                     .crossfade(true)
                     .build(),
                 contentDescription = "Avatar",

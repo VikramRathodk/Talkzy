@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.devvikram.talkzy"
-        minSdk = 23
+        minSdk = 25
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -121,6 +121,10 @@ dependencies {
     //
     implementation(libs.androidx.constraintlayout.compose)
     implementation (libs.google.accompanist.systemuicontroller)
+
+    // animated navigation bar
+    implementation("com.exyte:animated-navigation-bar:1.0.0")
+
 
 
     testImplementation(libs.junit)

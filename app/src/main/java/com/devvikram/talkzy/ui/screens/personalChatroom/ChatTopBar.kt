@@ -116,7 +116,7 @@ fun ChatTopBar(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Username & Status with improved typography
+                // Username & Status
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -131,7 +131,7 @@ fun ChatTopBar(
 
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    // Show online status or last seen with better visual cues
+                    // Show online status or last seen
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -198,7 +198,7 @@ fun ChatTopBar(
             }
 
 
-            // More Options with improved styling
+            // More Options
             IconButton(
                 onClick = onMoreOptionsClick,
                 modifier = Modifier

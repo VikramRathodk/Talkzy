@@ -115,6 +115,7 @@ fun CreateGroupScreen(
                     groupDescription,
                     selectedContacts.value,
                 )
+                appLevelNavController.navigate(HomeNavigationDestination.HomeDest.route)
             }
         )
     }

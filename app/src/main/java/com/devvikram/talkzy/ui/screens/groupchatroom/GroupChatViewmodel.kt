@@ -4,10 +4,13 @@ import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.devvikram.talkzy.AppUtils
+import com.devvikram.talkzy.config.ModelMapper
 import com.devvikram.talkzy.config.constants.LoginPreference
 import com.devvikram.talkzy.config.constants.MessageType
 import com.devvikram.talkzy.data.firebase.config.FirebaseConstant
 import com.devvikram.talkzy.data.firebase.repository.FirebaseConversationRepository
+import com.devvikram.talkzy.data.firebase.repository.FirebaseMessageRepository
 import com.devvikram.talkzy.data.room.models.ConversationWithContacts
 import com.devvikram.talkzy.data.room.models.RoomContact
 import com.devvikram.talkzy.data.room.models.RoomMessage
@@ -32,7 +35,8 @@ class GroupChatViewmodel @Inject constructor(
     private val contactRepository: ContactRepository,
     private val messageRepository: MessageRepository,
     private val firestore: FirebaseFirestore,
-    private val conversationRepository: ConversationRepository
+    private val conversationRepository: ConversationRepository,
+    private val firebaseMessageRepository: FirebaseMessageRepository
 ) : ViewModel() {
 
 
@@ -72,11 +76,13 @@ class GroupChatViewmodel @Inject constructor(
 
     }
 
-    private suspend fun observeConversationInfo(conversationId : String){
-        conversationRepository.getConversationByConversationIdFlow(_conversationId.value).collectLatest {
-            _groupInformation.value = it
-        }
+    private suspend fun observeConversationInfo(conversationId: String) {
+        conversationRepository.getConversationByConversationIdFlow(_conversationId.value)
+            .collectLatest {
+                _groupInformation.value = it
+            }
     }
+
     private suspend fun observeMessages() {
 
         messageRepository.getMessageByConversationIdWithFlow(_conversationId.value)
@@ -159,7 +165,7 @@ class GroupChatViewmodel @Inject constructor(
 
     fun sendMessage(message: String) {
         viewModelScope.launch {
-            val existingConversation =  conversationRepository.getConversationByConversationId(
+            val existingConversation = conversationRepository.getConversationByConversationId(
                 _conversationId.value
             )
             val newMessageId =
@@ -167,7 +173,9 @@ class GroupChatViewmodel @Inject constructor(
                     .document().id
             val senderUserId = loginPreference.getUserId()
 
-            if(existingConversation != null){
+            val datePartition = AppUtils.getDatePartition(System.currentTimeMillis())
+
+            if (existingConversation != null) {
                 val newMessage = RoomMessage(
                     messageId = newMessageId,
                     conversationId = existingConversation.conversationId,
@@ -176,11 +184,27 @@ class GroupChatViewmodel @Inject constructor(
                     senderName = _loggedUser.value?.name.orEmpty(),
                     messageType = MessageType.TEXT.toString(),
                     timestamp = System.currentTimeMillis(),
+                    datePartition = datePartition,
+                    lastModifiedAt = System.currentTimeMillis()
                 )
 
-                Log.d(TAG, "sendMessage: Existing conversation detected. Sending message: $newMessage")
+                Log.d(
+                    TAG,
+                    "sendMessage: Existing conversation detected. Sending message: $newMessage"
+                )
 
-                messageRepository.insertNewMessage(newMessage, existingConversation)
+                messageRepository.insertNewMessage(newMessage)
+                firebaseMessageRepository.insertMessage(
+                    conversationId = existingConversation.conversationId,
+                    message = ModelMapper.mapToChatMessage(newMessage),
+                    datePartition = datePartition
+                )
+                firebaseConversationRepository.updateConversationField(
+                    conversationId = existingConversation.conversationId,
+                    field =  mapOf(
+                        "lastModifiedAt" to System.currentTimeMillis()
+                    )
+                )
             }
         }
     }

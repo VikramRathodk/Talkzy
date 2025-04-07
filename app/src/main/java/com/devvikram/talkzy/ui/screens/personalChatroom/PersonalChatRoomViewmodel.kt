@@ -5,11 +5,14 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.devvikram.talkzy.AppUtils
+import com.devvikram.talkzy.config.ModelMapper
 import com.devvikram.talkzy.config.constants.LoginPreference
 import com.devvikram.talkzy.config.constants.MessageType
 import com.devvikram.talkzy.data.firebase.config.FirebaseConstant
 import com.devvikram.talkzy.data.firebase.models.Participant
 import com.devvikram.talkzy.data.firebase.repository.FirebaseConversationRepository
+import com.devvikram.talkzy.data.firebase.repository.FirebaseMessageRepository
 import com.devvikram.talkzy.data.room.models.RoomContact
 import com.devvikram.talkzy.data.room.models.RoomConversation
 import com.devvikram.talkzy.data.room.models.RoomMessage
@@ -39,7 +42,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
     private val firebaseConversationRepository: FirebaseConversationRepository,
     private val contactRepository: ContactRepository,
     private val messageRepository: MessageRepository,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val firebaseMessageRepository: FirebaseMessageRepository
 ) : ViewModel() {
 
     private val _conversationId = MutableStateFlow("")
@@ -171,6 +175,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
                     firestore.collection(FirebaseConstant.FIRESTORE_MESSAGE_COLLECTION)
                         .document().id
                 val participantIds = listOf(senderUserId, receiverUserId)
+                val datePartition = AppUtils.getDatePartition(System.currentTimeMillis())
+                Log.d("InsertNewMessage", "Calculated date partition: $datePartition")
 
                 if (existingConversation != null) {
                     sendMessageToExistingConversation(
@@ -178,6 +184,7 @@ class PersonalChatRoomViewmodel @Inject constructor(
                         newMessageId = newMessageId,
                         message = message,
                         senderUserId = senderUserId,
+                        datePartition = datePartition
                     )
                 } else {
                     createNewConversationAndSendMessage(
@@ -185,7 +192,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
                         newMessageId = newMessageId,
                         message = message,
                         senderUserId = senderUserId,
-                        receiverUserId = receiverUserId
+                        receiverUserId = receiverUserId,
+                        datePartition = datePartition
                     )
                 }
             } catch (e: Exception) {
@@ -198,7 +206,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
         existingConversation: RoomConversation,
         newMessageId: String,
         message: String,
-        senderUserId: String
+        senderUserId: String,
+        datePartition: String
     ) {
         val newMessage = RoomMessage(
             messageId = newMessageId,
@@ -208,11 +217,18 @@ class PersonalChatRoomViewmodel @Inject constructor(
             senderName = _loggedUser.value?.name.orEmpty(),
             messageType = MessageType.TEXT.toString(),
             timestamp = System.currentTimeMillis(),
+            datePartition = datePartition,
+            lastModifiedAt = System.currentTimeMillis()
         )
 
         Log.d(TAG, "sendMessage: Existing conversation detected. Sending message: $newMessage")
 
-        messageRepository.insertNewMessage(newMessage, existingConversation)
+        messageRepository.insertNewMessage(newMessage)
+        firebaseMessageRepository.insertMessage(
+            datePartition = datePartition,
+            conversationId = existingConversation.conversationId,
+            message = ModelMapper.mapToChatMessage(newMessage),
+        )
         Log.d(TAG, "sendMessage: Message sent successfully in existing conversation")
     }
 
@@ -221,7 +237,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
         newMessageId: String,
         message: String,
         senderUserId: String,
-        receiverUserId: String
+        receiverUserId: String,
+        datePartition: String
     ) {
         Log.d(
             TAG,
@@ -238,6 +255,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
             senderName = _loggedUser.value?.name.orEmpty(),
             messageType = MessageType.TEXT.toString(),
             timestamp = System.currentTimeMillis(),
+            datePartition = datePartition,
+            lastModifiedAt = System.currentTimeMillis()
         )
 
         val conversation = RoomConversation(
@@ -246,7 +265,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
             type = "P",
             createdBy = senderUserId,
             createdAt = System.currentTimeMillis(),
-            participantIds = participantIds
+            participantIds = participantIds,
+            lastModifiedAt = System.currentTimeMillis()
         )
 
         val roomParticipants = participantIds.map {
@@ -264,7 +284,18 @@ class PersonalChatRoomViewmodel @Inject constructor(
             conversation,
             roomParticipants,
             participantIds.map { Participant(it, "MEMBER") })
-        messageRepository.insertNewMessage(newMessage, conversation)
+        messageRepository.insertNewMessage(newMessage)
+        firebaseMessageRepository.insertMessage(
+            datePartition = datePartition,
+            conversationId = conversation.conversationId,
+            message = ModelMapper.mapToChatMessage(newMessage),
+        )
+        firebaseConversationRepository.updateConversationField(
+            conversationId = conversation.conversationId,
+            field =  mapOf(
+                "lastModifiedAt" to System.currentTimeMillis()
+            )
+        )
 
         _conversationId.value = newConversationId
         Log.d(TAG, "sendMessage: New conversation created and message sent successfully")
