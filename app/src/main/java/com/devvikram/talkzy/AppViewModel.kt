@@ -225,7 +225,6 @@ class AppViewModel @Inject constructor(
         val currentDate = formatter.format(Date())
         val userId = loginPreference.getUserId()
 
-        // Remove existing listener before adding a new one
         messageListeners[conversationId]?.remove()
 
         messageListeners[conversationId] =
@@ -233,7 +232,6 @@ class AppViewModel @Inject constructor(
                 .document(conversationId)
                 .collection(currentDate)
                 .orderBy("lastModifiedAt", Query.Direction.DESCENDING)
-                // Remove limit to get all messages
                 .addSnapshotListener { snapshots, error ->
                     if (error != null) {
                         Log.e(TAG, "Error listening to messages: ${error.message}")
@@ -331,11 +329,6 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    private fun isConversationOpen(conversationId: String): Boolean {
-        Log.d(TAG, "isConversationOpen: {${conversationId == _currentConversationId.value}")
-        return conversationId == _currentConversationId.value
-    }
-
     private suspend fun updateLocalDatabase(message: ChatMessage) {
         val existingMessage = messageRepository.getMessageByMessageId(message.messageId)
 
@@ -350,6 +343,10 @@ class AppViewModel @Inject constructor(
         }
     }
 
+    private fun isConversationOpen(conversationId: String): Boolean {
+        Log.d(TAG, "isConversationOpen: {${conversationId == _currentConversationId.value}")
+        return conversationId == _currentConversationId.value
+    }
     private fun deleteMessageFromLocalDatabase(messageId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             messageRepository.deleteMessageById(messageId)

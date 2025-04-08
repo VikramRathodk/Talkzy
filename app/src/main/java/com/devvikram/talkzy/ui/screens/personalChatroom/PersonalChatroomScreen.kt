@@ -111,7 +111,6 @@ fun PersonalChatroomScreen(
                 onCameraClick = {},
                 onAttachmentClick = {}
             )
-
         }
 
     ) { paddingValues ->

@@ -2,6 +2,8 @@ package com.devvikram.talkzy.config.constants
 
 import android.content.Context
 import androidx.core.content.edit
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class LoginPreference(private val context: Context) {
     private val sharedPreferences =
@@ -76,6 +78,33 @@ class LoginPreference(private val context: Context) {
         sharedPreferences.edit { clear() }
     }
 
+    // In LoginPreference class
+    fun getLastContactSyncTimestamp(): Long? {
+        return sharedPreferences.getLong("last_contact_sync", 0)
+    }
+
+    fun setLastContactSyncTimestamp(timestamp: Long) {
+        sharedPreferences.edit().putLong("last_contact_sync", timestamp).apply()
+    }
+
+    fun getLastConversationSyncTimestamp(): Long? {
+        return sharedPreferences.getLong("last_conversation_sync", 0)
+    }
+
+    fun setLastConversationSyncTimestamp(timestamp: Long) {
+        sharedPreferences.edit().putLong("last_conversation_sync", timestamp).apply()
+    }
+
+    fun getLastMessageSyncMap(): MutableMap<String, Long>? {
+        val json = sharedPreferences.getString("last_message_sync_map", null) ?: return mutableMapOf()
+        val type = object : TypeToken<MutableMap<String, Long>>() {}.type
+        return Gson().fromJson(json, type)
+    }
+
+    fun setLastMessageSyncMap(syncMap: MutableMap<String, Long>) {
+        val json = Gson().toJson(syncMap)
+        sharedPreferences.edit().putString("last_message_sync_map", json).apply()
+    }
 
     companion object {
         const val PREFERENCES_NAME = "LOGIN_PREFERENCES"
