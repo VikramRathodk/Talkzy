@@ -44,9 +44,27 @@ sealed class HomeNavigationDestination(val route: String) {
                 "personalProfile/$conversationId/$receiverId"
         }
     }
+    @Serializable
+    data class GroupProfile(
+        val conversationId: String,
+    ) : HomeNavigationDestination("groupProfile/{conversationId}") {
+        companion object {
+            fun createRoute(conversationId: String) =
+                "groupProfile/$conversationId"
+        }
+    }
 
     @Serializable
-    data object GroupChatroomDest : HomeNavigationDestination("groupChatroom")
+    data class GroupChatroomDest(
+        val conversationId: String,
+    ) : HomeNavigationDestination("groupChatroom/{conversationId}"){
+        companion object {
+            fun createRoute(conversationId: String) =
+                "groupChatroom/$conversationId"
+        }
+    }
 
+    @Serializable
+    data object CreateGroupDest : HomeNavigationDestination("groupCreate")
 
 }

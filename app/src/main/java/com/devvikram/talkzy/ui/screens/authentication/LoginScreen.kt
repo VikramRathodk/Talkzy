@@ -1,7 +1,7 @@
 package com.devvikram.talkzy.ui.screens.authentication
 
+
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,23 +62,36 @@ fun LoginScreen(
     val loginState by authenticationViewModel.loginState.collectAsState()
     val context = LocalContext.current
 
-
     LaunchedEffect(loginState) {
-        if (loginState is AuthenticationViewmodel.LoginState.Success) {
-            appViewModel._isLoggedIn.value = true
-            Toast.makeText(context, (loginState as AuthenticationViewmodel.LoginState.Success).message, Toast.LENGTH_SHORT).show()
-        }
-        if (loginState is AuthenticationViewmodel.LoginState.Error) {
-            // Handle error state
-            Toast.makeText(context, (loginState as AuthenticationViewmodel.LoginState.Error).message, Toast.LENGTH_SHORT).show()
+        when (loginState) {
+            is AuthenticationViewmodel.LoginState.Success -> {
+                appViewModel._isLoggedIn.value = true
+                Toast.makeText(
+                    context,
+                    (loginState as AuthenticationViewmodel.LoginState.Success).message,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            is AuthenticationViewmodel.LoginState.Error -> {
+                Toast.makeText(
+                    context,
+                    (loginState as AuthenticationViewmodel.LoginState.Error).message,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            else -> {}
         }
     }
 
+    val colorScheme = MaterialTheme.colorScheme
+
     val gradientBackground = Brush.linearGradient(
         colors = listOf(
-            MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.surface
+            colorScheme.primary,
+            colorScheme.primaryContainer,
+            colorScheme.surface
         ),
         start = Offset.Zero,
         end = Offset.Infinite
@@ -96,7 +109,7 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(24.dp),
-            color = Color.White.copy(alpha = 0.2f),
+            color = colorScheme.surface.copy(alpha = 0.2f),
             tonalElevation = 48.dp
         ) {
             Column(
@@ -111,7 +124,7 @@ fun LoginScreen(
                 Text(
                     text = "Welcome Back!",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.background
+                    color = colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -119,7 +132,7 @@ fun LoginScreen(
                 Text(
                     text = "Sign in to continue",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.8f)
+                    color = colorScheme.onSurface.copy(alpha = 0.8f)
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -147,7 +160,7 @@ fun LoginScreen(
 
                 Text(
                     text = "Forgot Password?",
-                    color = Color.White,
+                    color = colorScheme.primary,
                     modifier = Modifier
                         .align(Alignment.End)
                         .clickable { navController.navigate("forgot_password") },
@@ -156,38 +169,36 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Animated Login Button
                 Button(
                     onClick = { authenticationViewModel.signIn(email, password) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp)),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.3f))
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorScheme.primary.copy(alpha = 0.3f),
+                        contentColor = colorScheme.onPrimary
+                    )
                 ) {
                     if (loginState is AuthenticationViewmodel.LoginState.Loading) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
-                        Text("Sign In", fontSize = 18.sp, color = Color.White)
+                        Text("Sign In", fontSize = 18.sp, color = colorScheme.onPrimary)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Social Login Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(
-                        4.dp,
-                        alignment = Alignment.CenterHorizontally
-                    )
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)
                 ) {
                     SocialButton(
                         text = "Google",
                         icon = Icons.Default.AccountCircle,
-                        color = Color(0xFFDB4437),
+                        color = Color(0xFFDB4437), // You can match this with MaterialTheme if themed
                         onClick = { authenticationViewModel.signInWithGoogle() },
                         modifier = Modifier.weight(1f)
                     )
@@ -204,15 +215,18 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Row {
-                    Text("Don't have an account?", color = Color.White)
+                    Text(
+                        "Don't have an account?",
+                        color = colorScheme.onSurface
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "Sign Up",
-                        color = MaterialTheme.colorScheme.primary,
+                        color = colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.clickable { navController.navigate(
-                            OnboardingDestination.Register.route
-                        ) }
+                        modifier = Modifier.clickable {
+                            navController.navigate(OnboardingDestination.Register.route)
+                        }
                     )
                 }
             }

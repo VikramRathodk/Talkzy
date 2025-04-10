@@ -3,21 +3,25 @@ package com.devvikram.talkzy.ui.screens.conversations
 import android.content.ContentValues.TAG
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+
 import androidx.navigation.NavHostController
-import com.devvikram.talkzy.data.room.models.LastMessage
 import com.devvikram.talkzy.ui.navigation.HomeNavigationDestination
 import com.devvikram.talkzy.ui.screens.HomeViewmodel
+import com.devvikram.talkzy.ui.screens.conversations.filters.FilterOptionsBar
 import com.devvikram.talkzy.ui.screens.conversations.itemviews.GroupConversationItemCard
 import com.devvikram.talkzy.ui.screens.conversations.itemviews.PersonalConversationItemCard
 
@@ -40,12 +44,20 @@ fun ConversationsScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp)
+            .background(MaterialTheme.colorScheme.background)
     ) {
+        // filter options
+        item {
+            FilterOptionsBar(conversationViewmodel = conversationViewmodel)
+        }
+
         // conversations iist
         items(conversations.value) { item ->
             val conversation = item.conversation
             val contact = item.contact
             Log.d(TAG, "ConversationsScreen: contact $contact")
+            val lastMessage by conversationViewmodel.getLastMessageFlow(conversation.conversationId ).collectAsState(initial = null)
+
 
             val conversationItem = when (conversation.type) {
                 "P" -> {
@@ -56,13 +68,7 @@ fun ConversationsScreen(
                         unreadMessageCount = 0,
                         selected = false,
                         timeStamp = conversation.createdAt,
-                        lastMessage = LastMessage(
-                            text = "Nice I'll do that.",
-                            type = "IMAGE",
-                            senderId = conversation.userId,
-                            timestamp = conversation.createdAt,
-                            mediaUrl = "",
-                        )
+                        lastMessage = lastMessage,
                     )
                 }
 
@@ -74,13 +80,7 @@ fun ConversationsScreen(
                         participants = conversation.participantIds,
                         selected = false,
                         timeStamp = conversation.createdAt,
-                        lastMessage = LastMessage(
-                            text = "Hello, How are you?",
-                            type = "VIDEO",
-                            senderId = conversation.userId,
-                            timestamp = conversation.createdAt,
-                            mediaUrl = "",
-                        )
+                        lastMessage = lastMessage
                     )
                 }
 
@@ -112,7 +112,11 @@ fun ConversationsScreen(
                         homeNavigationController = homeNavigationController,
                         onClick = {
                             Toast.makeText(context, "Group Clicked", Toast.LENGTH_SHORT).show()
-                            appLevelNavController.navigate(HomeNavigationDestination.GroupChatroomDest.route)
+                            appLevelNavController.navigate(
+                                HomeNavigationDestination.GroupChatroomDest.createRoute(
+                                    conversationItem.conversationId,
+                                )
+                            )
                         }
                     )
                 }

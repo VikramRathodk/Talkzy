@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +75,7 @@ fun PersonalChatroomScreen(
     }
     // Runs only when `conversationId` changes
     LaunchedEffect(conversationId) {
+        appViewmodel.setCurrentConversationId(conversationId)
         personalChatRoomViewmodel.setConversationId(conversationId)
         personalChatRoomViewmodel.getReceiverInfo(receiverId)
     }
@@ -83,6 +85,13 @@ fun PersonalChatroomScreen(
         }
     }
 
+    DisposableEffect(
+        conversationId
+    ) {
+        onDispose {
+            appViewmodel.setCurrentConversationId("")
+        }
+    }
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -111,7 +120,6 @@ fun PersonalChatroomScreen(
                 onCameraClick = {},
                 onAttachmentClick = {}
             )
-
         }
 
     ) { paddingValues ->

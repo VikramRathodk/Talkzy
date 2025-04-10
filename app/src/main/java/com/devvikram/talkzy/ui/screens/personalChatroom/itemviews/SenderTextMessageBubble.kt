@@ -34,12 +34,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import com.devvikram.talkzy.AppUtils
+import com.devvikram.talkzy.R
+import com.devvikram.talkzy.ui.reuseables.messages.MessageTimestamp
+import com.devvikram.talkzy.ui.reuseables.messages.SenderMessageBubbleWrapper
 import com.devvikram.talkzy.ui.screens.personalChatroom.models.PersonalChatMessageItem
 
 @Composable
@@ -49,87 +53,65 @@ fun SenderTextMessageBubble(
     val time = AppUtils.getTimeFromTimeStamp(message.timestamp)
     var isExpanded by remember { mutableStateOf(false) }
 
-    val icon = when {
-        message.isReadBy.isNotEmpty() -> Icons.Default.CheckCircle // Read
-        message.isReceivedBy.isNotEmpty() -> Icons.Default.Check // Delivered
-        else -> Icons.Default.CheckCircle // Sent (Pending)
+    val statusIconRes = when {
+        message.isReadBy.isNotEmpty() -> R.drawable.ic_read_tick
+        message.isReceivedBy.isNotEmpty() -> R.drawable.ic_delivered_tick
+        else -> R.drawable.ic_sent_tick
     }
 
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        contentAlignment = Alignment.CenterEnd
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.End
     ) {
-        Box(
+        SenderMessageBubbleWrapper(
             modifier = Modifier
-                .align(Alignment.CenterEnd)
                 .wrapContentWidth()
-                .widthIn(min = 80.dp, max = 250.dp)
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(Color(0xFF0A1950), Color(0xFF4A6EA8))
-                    ),
-                    shape = RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = 16.dp
-                    )
-                )
-
-                .padding(horizontal = 14.dp, vertical = 10.dp)
+                .widthIn(max = 250.dp)
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(
-                    space = 4.dp,
-                ),
-                horizontalAlignment = Alignment.Start
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier.wrapContentWidth()
             ) {
-                val maxLines = if (isExpanded) Int.MAX_VALUE else 5 // Show limited lines if not expanded
+                val maxLines = if (isExpanded) Int.MAX_VALUE else 5
 
                 Text(
                     text = message.text,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     textAlign = TextAlign.Start,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = maxLines,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.wrapContentWidth()
                 )
 
                 if (message.text.length > 150) {
                     Text(
                         text = if (isExpanded) "Read Less" else "Read More",
-                        color = Color.LightGray,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
                         textAlign = TextAlign.End,
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier
                             .clickable { isExpanded = !isExpanded }
-                            .padding(top = 4.dp)
+                            .align(Alignment.End)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
                 Row(
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .wrapContentWidth(),
+                    modifier = Modifier.align(Alignment.End),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = time,
-                        color = Color.White.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.labelSmall
-                    )
+                    MessageTimestamp(time = time)
 
                     Icon(
-                        imageVector = icon,
+                        painter = painterResource(statusIconRes),
                         contentDescription = "Message status",
-                        tint = Color.White.copy(alpha = 0.7f),
+                        tint = Color.Unspecified,
                         modifier = Modifier.size(14.dp)
                     )
-
                 }
             }
         }

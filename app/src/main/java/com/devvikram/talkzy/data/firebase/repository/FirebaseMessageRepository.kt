@@ -41,6 +41,20 @@ class FirebaseMessageRepository @Inject constructor(
                 }
             }
     }
+    suspend fun batchUpdateMessagesInFirebase(messages: List<ChatMessage>, datePartition: String) {
+        val batch = firestore.batch()
+
+        messages.forEach { message ->
+            val docRef = firestore.collection(FirebaseConstant.FIRESTORE_MESSAGE_COLLECTION)
+                .document(message.conversationId)
+                .collection(datePartition)
+                .document(message.messageId)
+
+            batch.set(docRef, message)
+        }
+
+        batch.commit()
+    }
 
     suspend fun updateMessageInFirebase(message: ChatMessage,datePartition: String) {
         try {
@@ -52,7 +66,7 @@ class FirebaseMessageRepository @Inject constructor(
                 .await()
             logger.info("Message updated successfully: ${message.messageId}")
         } catch (error: Exception) {
-            logger.severe("Error updating message: ${error.message}")  // Handle the error appropriately
+            logger.severe("Error updating message: ${error.message}")
         }
     }
 }

@@ -1,25 +1,19 @@
 package com.devvikram.talkzy.data.room.repository
 
 import com.devvikram.talkzy.config.ModelMapper
-import com.devvikram.talkzy.data.firebase.config.FirebaseConstant
 import com.devvikram.talkzy.data.firebase.models.Participant
 import com.devvikram.talkzy.data.firebase.repository.FirebaseConversationRepository
 import com.devvikram.talkzy.data.room.dao.ConversationDao
 import com.devvikram.talkzy.data.room.models.ConversationWithContacts
 import com.devvikram.talkzy.data.room.models.RoomConversation
-import com.devvikram.talkzy.data.room.models.RoomMessage
 import com.devvikram.talkzy.data.room.models.RoomParticipant
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
-import kotlin.collections.map
 
 class ConversationRepository @Inject constructor(
     private val conversationDao: ConversationDao,
-    private val messageRepository: MessageRepository,
     private val participantRepository: ParticipantRepository,
     private val firebaseConversationRepository: FirebaseConversationRepository,
-    private val firestore: FirebaseFirestore
 ) {
 
     suspend fun createConversationWithMessage(
@@ -45,19 +39,20 @@ class ConversationRepository @Inject constructor(
     suspend fun getConversationByConversationId(conversationId: String): RoomConversation {
         return conversationDao.getConversationByConversationId(conversationId)
     }
+    fun getConversationByConversationIdFlow(conversationId: String): Flow<ConversationWithContacts> {
+        return conversationDao.getConversationByConversationIdFlow(conversationId)
+    }
 
     suspend fun deleteConversation(conversationId: String) {
         conversationDao.deleteConversation(conversationId)
 
     }
 
-    fun getConversationWithContactFlow(): Flow<List<ConversationWithContacts>> {
+    fun getAllConversationWithContactFlow(): Flow<List<ConversationWithContacts>> {
         return conversationDao.getConversationWithContactFlow()
     }
 
    suspend fun deleteAllConversations() {
        conversationDao.deleteAllConversations()
    }
-
-
 }

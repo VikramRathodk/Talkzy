@@ -1,9 +1,11 @@
 package com.devvikram.talkzy.ui.reuseables
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -28,12 +30,25 @@ fun CustomTextField(
     isPasswordVisible: Boolean = false,
     onPasswordToggle: (() -> Unit)? = null
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text(label, color = Color.White.copy(alpha = 0.7f)) },
+        placeholder = {
+            Text(
+                text = label,
+                color = colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        },
         singleLine = true,
-        leadingIcon = { Icon(imageVector = icon, contentDescription = null, tint = Color.White) },
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = colorScheme.onSurface
+            )
+        },
         trailingIcon = if (isPassword) {
             {
                 IconButton(onClick = { onPasswordToggle?.invoke() }) {
@@ -42,21 +57,28 @@ fun CustomTextField(
                             id = if (isPasswordVisible) R.drawable.hide_visibility else R.drawable.show_visibility
                         ),
                         contentDescription = null,
-                        tint = Color.White
+                        tint = colorScheme.onSurface,
+                        modifier = Modifier
+                            .size(24.dp)
                     )
                 }
             }
         } else null,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth(),
-        textStyle = TextStyle(color = Color.White),
+        textStyle = TextStyle(color = colorScheme.onSurface),
         colors = TextFieldDefaults.colors(
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            focusedContainerColor = Color.White.copy(alpha = 0.3f),
-            unfocusedContainerColor = Color.White.copy(alpha = 0.3f),
+            focusedTextColor = colorScheme.onSurface,
+            unfocusedTextColor = colorScheme.onSurface,
+            focusedContainerColor = colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            unfocusedContainerColor = colorScheme.surfaceVariant.copy(alpha = 0.3f),
             unfocusedIndicatorColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            cursorColor = colorScheme.primary
         ),
-        visualTransformation = if (isPassword && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None
+        visualTransformation = if (isPassword && !isPasswordVisible)
+            PasswordVisualTransformation()
+        else
+            VisualTransformation.None
     )
 }

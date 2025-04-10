@@ -1,5 +1,7 @@
 package com.devvikram.talkzy.ui.screens.conversations.itemviews
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.devvikram.talkzy.AppUtils
 import com.devvikram.talkzy.R
 import com.devvikram.talkzy.config.constants.MediaType
 import com.devvikram.talkzy.ui.navigation.HomeNavigationDestination
@@ -46,8 +49,7 @@ fun GroupConversationItemCard(
     ) {
         ProfileImage(
             imagePath = conversationItem.groupIconLocalPath,
-            modifier = Modifier.size(48.dp),
-            placeholderRes = R.drawable.group_icon
+            placeholderRes = R.drawable.baseline_groups_24
         )
 
 
@@ -76,11 +78,17 @@ fun GroupConversationItemCard(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                Text(
-                    text = formatTimestamp(conversationItem.timeStamp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                lastMessage?.let {
+                    if (it.timestamp != 0L) {
+                        Log.d(TAG, "GroupConversationItemCard: ${it.timestamp}")
+                        Text(
+                            text = AppUtils.getTime(it.timestamp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
             }
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -90,38 +98,42 @@ fun GroupConversationItemCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Media Icon if message contains an image or video
-                if (lastMessage.mediaType == MediaType.IMAGE.name) {
-                    Icon(
-                        imageVector = Icons.Filled.Notifications,
-                        contentDescription = "Image",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                } else if (lastMessage.mediaType == MediaType.VIDEO.name) {
-                    Icon(
-                        imageVector = Icons.Filled.AccountBox,
-                        contentDescription = "Video",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
+                lastMessage?.let {
+                    if (it.mediaType == MediaType.IMAGE.name) {
+                        Icon(
+                            imageVector = Icons.Filled.Notifications,
+                            contentDescription = "Image",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                    } else if (lastMessage.mediaType == MediaType.VIDEO.name) {
+                        Icon(
+                            imageVector = Icons.Filled.AccountBox,
+                            contentDescription = "Video",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
                 }
 
                 // Last Message Preview
-                Text(
-                    text = lastMessage.text,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    softWrap = true,
-                    modifier = Modifier.weight(1f)
-                )
+                lastMessage?.let {
+                    Text(
+                        text = it.text,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        softWrap = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 // Unread Count Badge
                 CircularBadge(
-                    unreadCount = 10,
+                    unreadCount = conversationItem.unreadMessageCount,
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }

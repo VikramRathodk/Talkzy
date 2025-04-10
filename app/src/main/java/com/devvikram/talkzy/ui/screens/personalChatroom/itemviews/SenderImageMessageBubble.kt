@@ -3,6 +3,7 @@ package com.devvikram.talkzy.ui.screens.personalChatroom.itemviews
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,29 +16,34 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.devvikram.talkzy.AppUtils
+import com.devvikram.talkzy.ui.reuseables.messages.MessageTimestamp
+import com.devvikram.talkzy.ui.reuseables.messages.SenderMessageBubbleWrapper
 import com.devvikram.talkzy.ui.screens.personalChatroom.models.PersonalChatMessageItem
 
 @Composable
 fun SenderImageMessageBubble(message: PersonalChatMessageItem.SenderImageMessageItem) {
+    val time = AppUtils.getTimeFromTimeStamp(message.timestamp)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         horizontalArrangement = Arrangement.End
     ) {
-        Box(
-            modifier = Modifier
-                .background(Color.LightGray, shape = RoundedCornerShape(12.dp))
-                .padding(8.dp)
-        ) {
-            AsyncImage(
-                model = message.imageUrl,
-                contentDescription = "Sent Image",
-                modifier = Modifier
-                    .size(150.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
+        SenderMessageBubbleWrapper {
+            Column {
+                AsyncImage(
+                    model = message.imageUrl,
+                    contentDescription = "Sent Image",
+                    modifier = Modifier
+                        .size(150.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+
+                MessageTimestamp(time = time)
+            }
         }
     }
 }

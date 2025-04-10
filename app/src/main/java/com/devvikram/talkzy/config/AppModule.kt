@@ -12,10 +12,12 @@ import com.devvikram.talkzy.data.room.AppDatabase
 import com.devvikram.talkzy.data.room.dao.ContactsDao
 import com.devvikram.talkzy.data.room.dao.ConversationDao
 import com.devvikram.talkzy.data.room.dao.MessageDao
+import com.devvikram.talkzy.data.room.dao.MessageStatusDao
 import com.devvikram.talkzy.data.room.dao.ParticipantDao
 import com.devvikram.talkzy.data.room.repository.ContactRepository
 import com.devvikram.talkzy.data.room.repository.ConversationRepository
 import com.devvikram.talkzy.data.room.repository.MessageRepository
+import com.devvikram.talkzy.data.room.repository.MessageStatusRepository
 import com.devvikram.talkzy.data.room.repository.ParticipantRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -62,16 +64,12 @@ object AppModule {
     fun provideConversationRepository(
         conversationDao: ConversationDao,
         firebaseConversationRepository: FirebaseConversationRepository,
-        firestore: FirebaseFirestore,
         @ApplicationContext context: Context,
         participantRepository: ParticipantRepository,
-        messageRepository: MessageRepository
     ) = ConversationRepository(
         conversationDao = conversationDao,
-        messageRepository = messageRepository,
         participantRepository = participantRepository,
         firebaseConversationRepository = firebaseConversationRepository,
-        firestore = firestore
     )
 
     @Provides
@@ -115,15 +113,28 @@ object AppModule {
     @Singleton
     fun provideMessageRepository(
         messageDao: MessageDao,
-        firebaseFirestore: FirebaseFirestore,
         firebaseMessageRepository: FirebaseMessageRepository,
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        loginPreference: LoginPreference
     ) = MessageRepository(
         messageDao = messageDao,
         firebaseMessageRepository = firebaseMessageRepository,
-        context = context
+        context = context,
+        loginPreference = loginPreference
     )
 
+
+    @Provides
+    @Singleton
+    fun provideMessageStatusDao(db: AppDatabase) = db.messageStatusDao()
+
+    @Provides
+    @Singleton
+    fun provideMessageStatusRepository(
+        messageStatusDao: MessageStatusDao
+    ) = MessageStatusRepository(
+        messageStatusDao = messageStatusDao
+    )
 
     @Provides
     @Singleton

@@ -1,68 +1,37 @@
 package com.devvikram.talkzy.ui.screens.personalChatroom.profile
 
 
-import android.content.ContentValues.TAG
-import android.util.Log
-import androidx.compose.animation.animateColor
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RenderEffect
-import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -70,146 +39,405 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.devvikram.talkzy.AppViewModel
-import com.devvikram.talkzy.R
-import com.devvikram.talkzy.data.room.models.RoomContact
+import com.devvikram.talkzy.ui.reuseables.ActionCard
+import com.devvikram.talkzy.ui.reuseables.Avatar
+import com.devvikram.talkzy.ui.reuseables.SectionHeader
+import com.devvikram.talkzy.ui.reuseables.SettingsItem
+import com.devvikram.talkzy.ui.reuseables.messages.SharedMediaGrid
 import com.devvikram.talkzy.ui.screens.personalChatroom.PersonalProfileViewModel
+import kotlin.math.max
+import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PersonalProfileScreen(
     conversationId: String,
-    appViewmodel: AppViewModel,
+    appViewModel: AppViewModel,
     appLevelNavController: NavHostController,
     receiverId: String,
     personalProfileViewModel: PersonalProfileViewModel = hiltViewModel()
 ) {
-    Log.d(TAG, "PersonalProfileScreen: $conversationId receiverId $receiverId")
+    val userProfile by personalProfileViewModel.userProfile.collectAsStateWithLifecycle()
 
     LaunchedEffect(receiverId) {
         personalProfileViewModel.setUserId(receiverId)
     }
 
-    val user by personalProfileViewModel.userProfile.collectAsStateWithLifecycle()
+    // Custom scroll behavior with enhanced parallax effect (similar to group profile)
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        snapAnimationSpec = tween(500)
+    )
+
+    val scrollFraction = scrollBehavior.state.collapsedFraction
+
+    // Shared media mock data
+    val sharedMediaList = listOf(
+        "https://picsum.photos/200/300",
+        "https://picsum.photos/201/300",
+        "https://picsum.photos/202/300",
+        "https://picsum.photos/203/300",
+        "https://picsum.photos/204/300"
+    )
+
+    val headerHeight = 360.dp
+
+    val avatarSize = 120.dp
+    val avatarSizeCollapsed = 40.dp
+
+    // Default profile data in case the actual data isn't loaded yet
+    val contactName = userProfile?.name ?: "Username"
+    val contactStatus = userProfile?.status ?: "Hey there! I'm using Talkzy"
+    val isOnline = userProfile?.isOnline ?: false
+    val profilePictureUrl = userProfile?.profilePicture ?: "https://randomuser.me/api/portraits/men/1.jpg"
+    val lastSeen = userProfile?.lastSeen ?: 0L
+    val gradientBackground = Brush.linearGradient(
+        colors = listOf(
+            colorScheme.primary.copy(alpha = 0.8f),
+            colorScheme.surfaceVariant.copy(alpha = 0.6f),
+            colorScheme.background
+        ),
+        start = Offset(0f, 0f),
+        end = Offset(900f, 900f)
+    )
+
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            LargeTopAppBar(
                 title = {
-                    Text(
-                        "Profile",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                    // Only show title in toolbar when the header is sufficiently collapsed
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.graphicsLayer {
+                                // Only show when sufficiently collapsed
+                                alpha = scrollFraction * 2f
+                            }
+                        ) {
+                            // Avatar that appears when collapsed
+                            Avatar(
+                                url = profilePictureUrl,
+                                size = avatarSizeCollapsed,
+                                isOnline = isOnline,
+                                modifier = Modifier.padding(end = 12.dp)
+                            )
+
+                            Column {
+                                Text(
+                                    text = contactName,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (isOnline) "Online" else "Last seen ${formatLastSeen(lastSeen)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { appLevelNavController.navigateUp() }) {
+                    IconButton(onClick = { appLevelNavController.popBackStack() }) {
                         Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onBackground
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                actions = {
+                    IconButton(onClick = { /* Handle more actions */ }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = colorScheme.surface,
+                    scrolledContainerColor = colorScheme.surface.copy(alpha = 0.95f)
                 )
             )
-        }
-    ) { paddingValues ->
-        user?.let { userProfile ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.background,
-                                MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        )
-                    )
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Profile Image with Shadow
+        },
+
+    ) { innerPadding ->
+        LazyColumn(
+            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = innerPadding.calculateTopPadding())
+        ) {
+            // Header
+            item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight(),
-                    contentAlignment = Alignment.Center
+                        .background(
+                            gradientBackground
+                        )
+                        .height(headerHeight)
                 ) {
-                    // Choose one of the variations
-                    AnimatedGradientProfileImage(
-                        profilePicturePath = userProfile.localProfilePicturePath,
-                        modifier = Modifier.size(160.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                // Subtle parallax effect
+                                val scrollDelta = scrollBehavior.state.contentOffset
+                                translationY = scrollDelta * 0.3f
+                                alpha = 1f - min(1f, max(0f, scrollFraction * 1.5f))
+                            }
+                    )
+
+                    // Profile info that fades as toolbar collapses
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Bottom,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 24.dp)
+                            .graphicsLayer {
+                                // Make this disappear as the toolbar title appears
+                                alpha = 1f - (scrollFraction * 2f)
+                                // Don't render when not visible to prevent overlap with toolbar title
+                                if (scrollFraction > 0.5f) {
+                                    alpha = 0f
+                                }
+                            }
+                    ) {
+                        // Avatar that gets smaller as we scroll
+                        val currentAvatarSize = lerp(avatarSize, avatarSize/2, scrollFraction)
+
+                        Avatar(
+                            url = profilePictureUrl,
+                            size = currentAvatarSize,
+                            isOnline = isOnline,
+                            modifier = Modifier
+                                .padding(bottom = 16.dp)
+                                .graphicsLayer {
+                                    val scale = 1f - (scrollFraction * 0.5f)
+                                    scaleX = scale
+                                    scaleY = scale
+                                }
+                        )
+
+                        Text(
+                            text = contactName,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            if (isOnline) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color.Green,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Online",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = 0.9f)
+                                )
+                            } else {
+                                Text(
+                                    text = "Last seen ${formatLastSeen(lastSeen)}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color =  MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.padding(top = 16.dp)
+                        ) {
+                            ContactActionButton(
+                                icon = Icons.Default.Call,
+                                label = "Call",
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+
+                            ContactActionButton(
+                                icon = Icons.Default.Call,
+                                label = "Video",
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            ContactActionButton(
+                                icon = Icons.Default.Search,
+                                label = "Search",
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Contact Info Card
+            item {
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.elevatedCardElevation(4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Contact Info",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        // Phone number
+                        ContactInfoItem(
+                            icon = Icons.Default.Phone,
+                            title = "Phone",
+                            value = userProfile?.mobileNumber ?: "+1 (555) 123-4567",
+                            actionIcon = Icons.Default.Call
+                        )
+
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                        // Email
+                        ContactInfoItem(
+                            icon = Icons.Default.Email,
+                            title = "Email",
+                            value = userProfile?.email ?: "username@example.com",
+                            actionIcon = Icons.Default.Send
+                        )
+                    }
+                }
+            }
+
+            // Shared Media Section
+            if (sharedMediaList.isNotEmpty()) {
+                item {
+                    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
+                        SectionHeader(
+                            title = "Shared Media",
+                            actionLabel = "See All",
+                            onActionClick = { /* Handle see all media */ }
+                        )
+
+                        SharedMediaGrid(sharedMediaList)
+                    }
+                }
+            }
+
+            // Quick Actions
+            item {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
+                    SectionHeader(title = "Quick Actions")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        ActionCard(
+                            title = "Mute",
+                            icon = Icons.Default.Notifications,
+                            backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ActionCard(
+                            title = "Block",
+                            icon = Icons.Default.Close,
+                            backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        ActionCard(
+                            title = "Files",
+                            icon = Icons.Default.AccountBox,
+                            backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ActionCard(
+                            title = "Starred",
+                            icon = Icons.Default.Star,
+                            backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // Settings
+            item {
+                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    SectionHeader(title = "Privacy & Settings")
+
+                    SettingsItem(
+                        title = "Encryption",
+                        icon = Icons.Default.Lock
+                    )
+
+                    SettingsItem(
+                        title = "Notifications",
+                        icon = Icons.Default.Notifications
+                    )
+
+                    SettingsItem(
+                        title = "Media Visibility",
+                        icon = Icons.Default.FavoriteBorder
+                    )
+
+                    SettingsItem(
+                        title = "Report Contact",
+                        icon = Icons.Default.Warning,
+                        isDestructive = true
                     )
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = userProfile.name,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.graphicsLayer {
-                        alpha = 0.99f
-                        translationY = 20f
-                    }
-                )
-
-                // User Status
-                Text(
-                    text = if(userProfile.status.isBlank()){
-                        "I am using Talkzy"
-                    }else{
-                        userProfile.status
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .graphicsLayer {
-                            alpha = 0.99f
-                            translationY = 30f
-                        }
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Profile Action Buttons
-                ProfileActionButtons(
-                    onMessageClick = {
-                        appLevelNavController.navigate("chat/${userProfile.userId}")
-                    },
-                    onVideoCallClick = {
-                        // Implement video call logic
-                    },
-                    onVoiceCallClick = {
-                        // Implement voice call logic
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Profile Details Section
-                ProfileDetailsSection(userProfile)
             }
-        } ?: run {
-            // Loading State
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+
         }
+    }
+}
+
+// Helper function to format "last seen" time
+fun formatLastSeen(timestamp: Long): String {
+    if (timestamp == 0L) return "recently"
+
+    val currentTime = System.currentTimeMillis()
+    val diffMinutes = (currentTime - timestamp) / (1000 * 60)
+
+    return when {
+        diffMinutes < 1 -> "just now"
+        diffMinutes < 60 -> "$diffMinutes minutes ago"
+        diffMinutes < 60 * 24 -> "${diffMinutes / 60} hours ago"
+        diffMinutes < 60 * 24 * 7 -> "${diffMinutes / (60 * 24)} days ago"
+        else -> "a long time ago"
     }
 }
 

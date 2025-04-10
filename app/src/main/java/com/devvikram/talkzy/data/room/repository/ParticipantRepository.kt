@@ -27,5 +27,9 @@ class ParticipantRepository @Inject constructor(
         participantDao.deleteAllParticipants()
 
     }
+
+    suspend fun deleteParticipantsByConversationId(conversationId: String)  {
+        participantDao.deleteParticipantsByConversationId(conversationId)
+    }
 }
 

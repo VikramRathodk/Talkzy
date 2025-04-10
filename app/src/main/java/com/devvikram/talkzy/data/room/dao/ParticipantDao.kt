@@ -22,4 +22,7 @@ interface ParticipantDao {
     @Query("DELETE FROM participants")
     suspend fun deleteAllParticipants()
 
+    @Query("DELETE FROM participants WHERE conversationId = :conversationId")
+    suspend fun deleteParticipantsByConversationId(conversationId: String)
+
 }
