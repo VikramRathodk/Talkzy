@@ -26,13 +26,6 @@ interface MessageDao {
     suspend fun getMessageByMessageId(messageId: String): RoomMessage
 
 
-    @Query("UPDATE messages SET isReceivedBy = :updatedReceivedBy WHERE messageId = :messageId")
-    suspend fun updateMessageReceivedByMap(messageId: String, updatedReceivedBy: Map<String, Long>)
-
-    @Query("UPDATE messages SET isReadBy = :updatedReadBy WHERE messageId = :messageId")
-    suspend fun updateMessageReadBy(messageId: String, updatedReadBy: Map<String, Long>)
-
-
     @Query("UPDATE messages SET lastModifiedAt = :currentTime WHERE messageId = :messageId")
     suspend fun updateLastModifiedAt(messageId: String, currentTime: Long)
 
@@ -45,4 +38,19 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE conversationId = :conversationId ORDER BY timestamp DESC LIMIT 1")
     fun getLastMessageWithFlow(conversationId: String): Flow<RoomMessage?>
 
+    @Query("SELECT * FROM messages WHERE conversationId = :conversationId AND senderId != :userId")
+    suspend fun getAllMessagesInConversation(conversationId: String, userId: String): List<RoomMessage>
+
+    @Query("SELECT messageId FROM messages WHERE conversationId = :conversationId")
+    suspend fun getMessageIdsForConversation(conversationId: String) : List<String>
+
+    // In MessageDao.kt
+    @Query("""
+    SELECT m.* FROM messages m
+    LEFT JOIN message_status s ON m.messageId = s.messageId AND s.userId = :currentUserId
+    WHERE m.conversationId = :conversationId 
+    AND m.senderId != :currentUserId
+    AND (s.readAt IS NULL OR s.messageId IS NULL)
+""")
+    suspend fun getUnreadMessagesForConversation(conversationId: String, currentUserId: String): List<RoomMessage>
 }

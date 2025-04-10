@@ -11,12 +11,17 @@ import com.devvikram.talkzy.data.firebase.config.FirebaseConstant
 import com.devvikram.talkzy.data.firebase.models.ChatMessage
 import com.devvikram.talkzy.data.firebase.models.Conversation
 import com.devvikram.talkzy.data.firebase.models.FirebaseContact
+import com.devvikram.talkzy.data.firebase.models.MessageStatus
 import com.devvikram.talkzy.data.firebase.repository.FirebaseContactRepository
 import com.devvikram.talkzy.data.firebase.repository.FirebaseMessageRepository
+import com.devvikram.talkzy.data.firebase.repository.FirebaseMessageStatusRepository
+import com.devvikram.talkzy.data.room.models.RoomMessage
+import com.devvikram.talkzy.data.room.models.RoomMessageStatus
 import com.devvikram.talkzy.data.room.models.RoomParticipant
 import com.devvikram.talkzy.data.room.repository.ContactRepository
 import com.devvikram.talkzy.data.room.repository.ConversationRepository
 import com.devvikram.talkzy.data.room.repository.MessageRepository
+import com.devvikram.talkzy.data.room.repository.MessageStatusRepository
 import com.devvikram.talkzy.data.room.repository.ParticipantRepository
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
@@ -40,7 +45,9 @@ class AppViewModel @Inject constructor(
     private val messageRepository: MessageRepository,
     private val firestore: FirebaseFirestore,
     private val firebaseMessageRepository: FirebaseMessageRepository,
-    private val participantRepository: ParticipantRepository
+    private val participantRepository: ParticipantRepository,
+    private val messageStatusRepository: MessageStatusRepository,
+    private val firebaseMessageStatusRepository: FirebaseMessageStatusRepository
 
 ) : ViewModel() {
 
@@ -67,6 +74,7 @@ class AppViewModel @Inject constructor(
     init {
         _isLoggedIn.value = loginPreference.isLoggedIn()
         _isOnBoardingCompleted.value = loginPreference.isOnBoardingCompleted()
+
     }
 
 
@@ -200,10 +208,12 @@ class AppViewModel @Inject constructor(
                                     )
                                 }
 
-                                 DocumentChange.Type.REMOVED -> {
+                                DocumentChange.Type.REMOVED -> {
                                     println("Document removed: ${it.document.data}")
                                     conversationRepository.deleteConversation(conversation.conversationId)
-                                     participantRepository.deleteParticipantsByConversationId(conversation.conversationId)
+                                    participantRepository.deleteParticipantsByConversationId(
+                                        conversation.conversationId
+                                    )
                                 }
 
                                 else -> {
@@ -219,14 +229,19 @@ class AppViewModel @Inject constructor(
                 }
     }
 
-    private fun syncMessages(conversationId: String) {
-        Log.d(TAG, "syncMessages: Syncing Messages for conversation $conversationId")
+
+    fun syncMessages(conversationId: String) {
+        val TAG = "SyncMessagesViewModel"
+        Log.d(TAG, "syncMessages: 🔄 Starting sync for conversation $conversationId")
+
         val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
         val currentDate = formatter.format(Date())
-        val userId = loginPreference.getUserId()
+        val currentUserId = loginPreference.getUserId()
 
-        messageListeners[conversationId]?.remove()
+        Log.d(TAG, "syncMessages: Current user ID: $currentUserId, Date: $currentDate")
 
+
+        Log.d(TAG, "syncMessages: Setting up new listener for conversation $conversationId")
         messageListeners[conversationId] =
             firestore.collection(FirebaseConstant.FIRESTORE_MESSAGE_COLLECTION)
                 .document(conversationId)
@@ -234,126 +249,236 @@ class AppViewModel @Inject constructor(
                 .orderBy("lastModifiedAt", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshots, error ->
                     if (error != null) {
-                        Log.e(TAG, "Error listening to messages: ${error.message}")
+                        Log.e(TAG, "❌ Error listening to messages: ${error.message}", error)
                         return@addSnapshotListener
                     }
 
-                    snapshots?.documentChanges?.forEach { change ->
-                        val message = change.document.toObject(ChatMessage::class.java)
-                        Log.d(
-                            TAG,
-                            "Message sync event: ${change.type} for message ${message.messageId}"
-                        )
+                    Log.d(
+                        TAG,
+                        "📥 Message snapshot received: ${snapshots?.documentChanges?.size ?: 0} changes, fromCache: ${snapshots?.metadata?.isFromCache}, hasPendingWrites: ${snapshots?.metadata?.hasPendingWrites()}"
+                    )
 
-                        viewModelScope.launch {
-                            handleMessageSync(message, userId, change.type, currentDate)
+                    if (snapshots != null && !snapshots.metadata.isFromCache) {
+                        snapshots.documentChanges.forEach { change ->
+                            val firebaseMessage = change.document.toObject(ChatMessage::class.java)
+                            Log.d(
+                                TAG,
+                                "📌 Message event: ${change.type} -> messageId: ${firebaseMessage.messageId}, senderId: ${firebaseMessage.senderId}"
+                            )
+
+
+                            viewModelScope.launch {
+                                if(change.type == DocumentChange.Type.REMOVED){
+                                    deleteMessageFromLocalDatabase(firebaseMessage.messageId)
+                                    delteMessageStatusFromLocalDatabase(firebaseMessage.messageId)
+                                }
+                                val existingMessage = messageRepository.getMessageById(firebaseMessage.messageId)
+                                Log.d(TAG, "Message ${firebaseMessage.messageId} exists in local DB: ${existingMessage != null}")
+
+                                if (existingMessage == null) {
+                                    val roomMessage = ModelMapper.mapToRoomMessage(firebaseMessage)
+                                    messageRepository.insertMessage(roomMessage)
+
+                                    if (firebaseMessage.senderId != loginPreference.getUserId()) {
+                                        handleNewMessage(roomMessage, conversationId)
+                                    } else {
+                                        // Add status for sender message
+                                        addSenderMessageStatus(roomMessage)
+                                    }
+                                }else{
+                                    Log.d(TAG, "syncMessages: Message ${firebaseMessage.messageId} already exists in local DB")
+                                }
+
+                            }
+
+                            Log.d(TAG, "Setting up status listener for message ${firebaseMessage.messageId}")
+                            listenToStatusUpdatesForConversation(conversationId)
                         }
+                    } else {
+                        Log.d(TAG, "Ignoring snapshot: fromCache=${snapshots?.metadata?.isFromCache}, hasPendingWrites=${snapshots?.metadata?.hasPendingWrites()}")
                     }
                 }
     }
 
-    private suspend fun handleMessageSync(
-        firebaseMessage: ChatMessage,
-        userId: String,
-        changeType: DocumentChange.Type,
-        datePartition: String
-    ) {
-        Log.d(TAG, "handleMessageSync: ${firebaseMessage.messageId} - Type: $changeType")
+    private fun addSenderMessageStatus(message: RoomMessage) {
+        val currentUserId = loginPreference.getUserId()
+        val currentTime = System.currentTimeMillis()
+        val status = RoomMessageStatus(
+            messageId = message.messageId,
+            userId = currentUserId,
+            receivedAt = currentTime,
+            readAt = currentTime
+        )
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                messageStatusRepository.addOrUpdateStatus(status)
+                firebaseMessageStatusRepository.insertReadStatus(
+                    ModelMapper.mapToMessageStatus(status)
+                )
+                Log.d("AppViewModel", "Inserted sender message status for ${message.messageId}")
+            } catch (e: Exception) {
+                Log.e("AppViewModel", "Error inserting sender status", e)
+            }
+        }
+    }
+
+    private fun delteMessageStatusFromLocalDatabase(messageId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            messageStatusRepository.deleteStatusByMessageId(messageId)
+        }
+    }
+
+    private fun handleNewMessage(message: RoomMessage, conversationId: String) {
+        val currentUserId = loginPreference.getUserId()
+        val currentTime = System.currentTimeMillis()
+        val TAG = "MessageStatusViewModel"
+
+        val isOpen = isConversationOpen(conversationId)
+        Log.d(TAG, "handleNewMessage: Conversation $conversationId is open: $isOpen")
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val messageStatus = RoomMessageStatus(
+                messageId = message.messageId,
+                userId = currentUserId,
+                receivedAt = currentTime,
+                readAt = if (isOpen) currentTime else null
+            )
+
+            Log.d(TAG, "handleNewMessage: Creating status - messageId: ${messageStatus.messageId}, userId: ${messageStatus.userId}, readAt: ${messageStatus.readAt}")
+
+            try {
+                messageStatusRepository.addOrUpdateStatus(messageStatus)
+                Log.d(TAG, "handleNewMessage: Local status saved successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "handleNewMessage: Error saving local status", e)
+            }
+
+            try {
+                Log.d(TAG, "handleNewMessage: Sending status to Firebase for message ${message.messageId}")
+                val firebaseStatus = ModelMapper.mapToMessageStatus(messageStatus)
+                firebaseMessageStatusRepository.insertReadStatus(firebaseStatus)
+            } catch (e: Exception) {
+                Log.e(TAG, "handleNewMessage: Error sending status to Firebase", e)
+            }
+        }
+    }
+    // In AppViewModel.kt
+    private val statusListeners = mutableMapOf<String, ListenerRegistration>()
+
+    fun listenToStatusUpdatesForConversation(conversationId: String) {
+        val TAG = "StatusListenerViewModel"
+
+        statusListeners[conversationId]?.remove()
+
+        Log.d(TAG, "Setting up status listener for conversation $conversationId")
+
+        viewModelScope.launch {
+            val messageIds = messageRepository.getMessageIdsForConversation(conversationId)
+
+            if (messageIds.isEmpty()) {
+                Log.d(TAG, "No messages found for conversation $conversationId")
+                return@launch
+            }
+
+            Log.d(TAG, "Listening for status updates on ${messageIds.size} messages")
+
+            messageIds.forEach { messageId ->
+                val messageStatusListener = firestore
+                    .collection(FirebaseConstant.FIRESTORE_MESSAGE_STATUS_COLLECTION)
+                    .document(messageId)
+                    .collection("message_status")
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            Log.e(TAG, "Error listening to status updates for message $messageId", error)
+                            return@addSnapshotListener
+                        }
+
+                        Log.d(TAG, "Status updates received for message $messageId: ${snapshot?.documents?.size ?: 0}")
+
+                        snapshot?.documentChanges?.forEach { change ->
+                            val status = change.document.toObject(MessageStatus::class.java)
+                            Log.d(TAG, "Processing status update: ${status.messageId}, ${status.userId}")
+
+                            viewModelScope.launch(Dispatchers.IO) {
+                                messageStatusRepository.addOrUpdateStatus(
+                                    ModelMapper.mapToRoomMessageStatus(status)
+                                )
+                            }
+                        }
+                    }
+
+            }
+        }
+    }
+
+
+    // In AppViewModel.kt
+    fun setCurrentConversationId(conversationId: String) {
+        val previousId = _currentConversationId.value
+        Log.d("ConversationViewModel", "Changing current conversation from $previousId to $conversationId")
+        _currentConversationId.value = conversationId
+
+        // If there's a new conversation opened, mark unread messages as read
+        if (conversationId.isNotEmpty()) {
+            markConversationMessagesAsRead(conversationId)
+        }
+    }
+
+    private fun markConversationMessagesAsRead(conversationId: String) {
+        val currentUserId = loginPreference.getUserId()
         val currentTime = System.currentTimeMillis()
 
-        when (changeType) {
-            DocumentChange.Type.ADDED -> {
-                handleAddedMessage(firebaseMessage, userId, currentTime, datePartition)
-            }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Get all unread messages for this conversation
+                val unreadMessages = messageRepository.getUnreadMessagesForConversation(
+                    conversationId = conversationId,
+                    currentUserId = currentUserId
+                )
 
-            DocumentChange.Type.MODIFIED -> {
-                Log.d(TAG, "Message Modified: ${firebaseMessage.messageId}")
-                updateLocalDatabase(firebaseMessage)
-            }
+                Log.d("ConversationViewModel", "Found ${unreadMessages.size} unread messages to mark as read")
 
-            DocumentChange.Type.REMOVED -> {
-                Log.d(TAG, "Message Removed: ${firebaseMessage.messageId}")
-                deleteMessageFromLocalDatabase(firebaseMessage.messageId)
+                if (unreadMessages.isNotEmpty()) {
+                    // Update local database
+                    unreadMessages.forEach { message ->
+                        val status = RoomMessageStatus(
+                            messageId = message.messageId,
+                            userId = currentUserId,
+                            readAt = currentTime,
+                            receivedAt = currentTime
+                        )
+                        messageStatusRepository.addOrUpdateStatus(status)
+                    }
+
+                    // Update Firebase (batch update for efficiency)
+                    val messageIds = unreadMessages.map { it.messageId }
+                    firebaseMessageStatusRepository.markMessagesAsRead(
+                        messageIds = messageIds,
+                        userId = currentUserId,
+                        timestamp = currentTime
+                    )
+                }else{
+                    Log.d("ConversationViewModel", "No unread messages to mark as read")
+                }
+            } catch (e: Exception) {
+                Log.e("ConversationViewModel", "Error marking messages as read", e)
             }
         }
     }
-
-    private suspend fun handleAddedMessage(
-        firebaseMessage: ChatMessage,
-        userId: String,
-        currentTime: Long,
-        datePartition: String
-    ) {
-        Log.d(TAG, "handleAddedMessage: Adding ${firebaseMessage.messageId}")
-
-        val readBy = firebaseMessage.isReadBy?.toMutableMap() ?: mutableMapOf()
-        val receivedBy = firebaseMessage.isReceivedBy?.toMutableMap() ?: mutableMapOf()
-
-        var isUpdated = false
-
-        if (isConversationOpen(firebaseMessage.conversationId)) {
-            if (!readBy.containsKey(userId)) {
-                readBy[userId] = currentTime
-                isUpdated = true
-            }
-        } else {
-            if (!receivedBy.containsKey(userId)) {
-                receivedBy[userId] = currentTime
-                isUpdated = true
-            }
-        }
-
-        if (isUpdated) {
-            val updatedMessage = firebaseMessage.copy(
-                isReadBy = readBy,
-                isReceivedBy = receivedBy,
-                lastModifiedAt = currentTime
-            )
-
-            messageRepository.updateReadField(
-                messageId = updatedMessage.messageId,
-                updatedMessage.isReadBy
-            )
-            messageRepository.updateReceivedField(
-                messageId = updatedMessage.messageId,
-                updatedMessage.isReceivedBy
-            )
-            messageRepository.updateLastModifiedAt(
-                messageId = updatedMessage.messageId,
-                currentTime
-            )
-            firebaseMessageRepository.updateMessageInFirebase(
-                message = updatedMessage,
-                datePartition = datePartition
-            )
-        }
-    }
-
-    private suspend fun updateLocalDatabase(message: ChatMessage) {
-        val existingMessage = messageRepository.getMessageByMessageId(message.messageId)
-
-        if (existingMessage != null) {
-            val updatedMessage = ModelMapper.mapToRoomMessage(
-                chatMessage = message,
-                existingMessage = existingMessage
-            )
-            messageRepository.insertMessage(updatedMessage)
-        } else {
-            messageRepository.insertMessage(ModelMapper.mapToRoomMessage(message))
-        }
-    }
-
     private fun isConversationOpen(conversationId: String): Boolean {
-        Log.d(TAG, "isConversationOpen: {${conversationId == _currentConversationId.value}")
-        return conversationId == _currentConversationId.value
+        val isOpen = conversationId == _currentConversationId.value
+        Log.d("ConversationViewModel", "Checking if conversation $conversationId is open: $isOpen (current=${_currentConversationId.value})")
+        return isOpen
     }
+
     private fun deleteMessageFromLocalDatabase(messageId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             messageRepository.deleteMessageById(messageId)
         }
     }
 
-    fun clearLocalDatabase(){
+    fun clearLocalDatabase() {
         viewModelScope.launch {
             contactRepository.deleteAllContacts()
             conversationRepository.deleteAllConversations()

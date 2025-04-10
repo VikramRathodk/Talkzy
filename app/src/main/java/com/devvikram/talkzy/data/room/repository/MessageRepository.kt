@@ -50,21 +50,6 @@ class MessageRepository @Inject constructor(
         return messageDao.getMessageByMessageId(messageId)
     }
 
-    suspend fun updateReceivedField(
-        messageId: String,
-        updatedReceivedBy: Map<String, Long>,
-    ) {
-        messageDao.updateMessageReceivedByMap(messageId, updatedReceivedBy.toMap())
-
-    }
-
-    suspend fun updateReadField(
-        messageId: String,
-        updatedReadBy: Map<String, Long>,
-    ) {
-        messageDao.updateMessageReadBy(messageId, updatedReadBy.toMap())
-    }
-
     suspend fun updateLastModifiedAt(messageId: String, currentTime: Long) {
         messageDao.updateLastModifiedAt(messageId, currentTime)
 
@@ -74,23 +59,24 @@ class MessageRepository @Inject constructor(
         messageDao.deleteMessageById(messageId)
     }
 
-
     suspend fun deleteAllMessages() {
         messageDao.deleteAllMessages()
 
     }
 
-
     fun getLastMessageFlow(conversationId: String): Flow<RoomMessage?> {
         return messageDao.getLastMessageWithFlow(conversationId)
     }
 
-    fun getUnreadMessageCountFlow(conversationId: String): Flow<Int> {
-        return messageDao.getMessagesByConversationIdWithFlow(conversationId)
-            .map { messages ->
-                messages.count { message ->
-                    !message.isReadBy.containsKey(loginPreference.getUserId())
-                }
-            }
+    suspend fun getMessageById(messageId: String): RoomMessage? {
+        return messageDao.getMessageById(messageId)
+    }
+
+    suspend  fun getMessageIdsForConversation(conversationId: String) : List<String> {
+       return messageDao.getMessageIdsForConversation(conversationId)
+    }
+    // In MessageRepository.kt
+    suspend fun getUnreadMessagesForConversation(conversationId: String, currentUserId: String): List<RoomMessage> {
+        return messageDao.getUnreadMessagesForConversation(conversationId, currentUserId)
     }
 }

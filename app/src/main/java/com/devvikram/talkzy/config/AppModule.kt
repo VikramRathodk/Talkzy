@@ -12,10 +12,12 @@ import com.devvikram.talkzy.data.room.AppDatabase
 import com.devvikram.talkzy.data.room.dao.ContactsDao
 import com.devvikram.talkzy.data.room.dao.ConversationDao
 import com.devvikram.talkzy.data.room.dao.MessageDao
+import com.devvikram.talkzy.data.room.dao.MessageStatusDao
 import com.devvikram.talkzy.data.room.dao.ParticipantDao
 import com.devvikram.talkzy.data.room.repository.ContactRepository
 import com.devvikram.talkzy.data.room.repository.ConversationRepository
 import com.devvikram.talkzy.data.room.repository.MessageRepository
+import com.devvikram.talkzy.data.room.repository.MessageStatusRepository
 import com.devvikram.talkzy.data.room.repository.ParticipantRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -121,6 +123,18 @@ object AppModule {
         loginPreference = loginPreference
     )
 
+
+    @Provides
+    @Singleton
+    fun provideMessageStatusDao(db: AppDatabase) = db.messageStatusDao()
+
+    @Provides
+    @Singleton
+    fun provideMessageStatusRepository(
+        messageStatusDao: MessageStatusDao
+    ) = MessageStatusRepository(
+        messageStatusDao = messageStatusDao
+    )
 
     @Provides
     @Singleton

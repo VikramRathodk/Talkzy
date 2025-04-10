@@ -66,7 +66,7 @@ class FirebaseMessageRepository @Inject constructor(
                 .await()
             logger.info("Message updated successfully: ${message.messageId}")
         } catch (error: Exception) {
-            logger.severe("Error updating message: ${error.message}")  // Handle the error appropriately
+            logger.severe("Error updating message: ${error.message}")
         }
     }
 }

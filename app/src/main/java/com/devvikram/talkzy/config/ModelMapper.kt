@@ -5,12 +5,14 @@ import com.devvikram.talkzy.data.firebase.models.ChatMessage
 import com.devvikram.talkzy.data.firebase.models.Conversation
 import com.devvikram.talkzy.data.firebase.models.FirebaseContact
 import com.devvikram.talkzy.data.firebase.models.ForwardMetadata
+import com.devvikram.talkzy.data.firebase.models.MessageStatus
 import com.devvikram.talkzy.data.firebase.models.Participant
 import com.devvikram.talkzy.data.room.models.LastMessage
 import com.devvikram.talkzy.data.room.models.RoomContact
 import com.devvikram.talkzy.data.room.models.RoomConversation
 import com.devvikram.talkzy.data.room.models.RoomForwardMetadata
 import com.devvikram.talkzy.data.room.models.RoomMessage
+import com.devvikram.talkzy.data.room.models.RoomMessageStatus
 import com.devvikram.talkzy.data.room.models.RoomParticipant
 
 
@@ -73,7 +75,10 @@ object ModelMapper {
     }
 
     // Convert RoomConversation to Firebase Conversation
-    fun toFirebaseConversation(roomConversation: RoomConversation, participants: List<Participant>): Conversation {
+    fun toFirebaseConversation(
+        roomConversation: RoomConversation,
+        participants: List<Participant>
+    ): Conversation {
         return Conversation(
             conversationId = roomConversation.conversationId,
             type = roomConversation.type,
@@ -107,7 +112,7 @@ object ModelMapper {
     }
 
     // 3. ChatMessage to RoomMessage
-    fun mapToRoomMessage(chatMessage: ChatMessage, existingMessage: RoomMessage? = null): RoomMessage {
+    fun mapToRoomMessage(chatMessage: ChatMessage): RoomMessage {
         return RoomMessage(
             messageId = chatMessage.messageId,
             conversationId = chatMessage.conversationId,
@@ -118,12 +123,10 @@ object ModelMapper {
             timestamp = chatMessage.timestamp ?: 0L,
             mediaUrl = chatMessage.mediaUrl,
             thumbnailUrl = chatMessage.thumbnailUrl,
-            mediaSize = chatMessage.mediaSize ?: existingMessage?.mediaSize,
+            mediaSize = chatMessage.mediaSize,
             mediaDurationInSeconds = chatMessage.mediaDurationInSeconds,
             isEdited = chatMessage.isEdited,
             reactions = chatMessage.reactions.mapValues { it.value },
-            isReadBy = chatMessage.isReadBy.mapValues { it.value ?: 0L },
-            isReceivedBy = chatMessage.isReceivedBy.mapValues { it.value ?: 0L },
             mentions = chatMessage.mentions,
             replyToMessageId = chatMessage.replyToMessageId,
             deletedForUsers = chatMessage.deletedForUsers,
@@ -144,14 +147,14 @@ object ModelMapper {
             isDownloaded = false,
             mediaType = chatMessage.mediaType,
             mediaName = chatMessage.mediaName,
-            mediaLocalUrl = existingMessage?.mediaLocalUrl,
-            mediaStatus = existingMessage?.mediaStatus.toString(),
-            uploadProgress = existingMessage?.uploadProgress ?: 0,
+            mediaLocalUrl = "",
+            mediaStatus = "IDEAL",
+            uploadProgress = 0,
             isUploaded = chatMessage.isUploaded,
             datePartition = chatMessage.datePartition,
             lastModifiedAt = chatMessage.lastModifiedAt
 
-            )
+        )
     }
 
     // 4. RoomMessage to ChatMessage
@@ -170,8 +173,6 @@ object ModelMapper {
             mediaDurationInSeconds = roomMessage.mediaDurationInSeconds,
             isEdited = roomMessage.isEdited,
             reactions = roomMessage.reactions.mapValues { it.value },
-            isReadBy = roomMessage.isReadBy.mapValues { it.value ?: 0L },
-            isReceivedBy = roomMessage.isReceivedBy.mapValues { it.value ?: 0L },
             mentions = roomMessage.mentions,
             replyToMessageId = roomMessage.replyToMessageId,
             deletedForUsers = roomMessage.deletedForUsers,
@@ -216,5 +217,24 @@ object ModelMapper {
             )
         }
     }
+
+    fun mapToRoomMessageStatus(status: MessageStatus): RoomMessageStatus {
+        return RoomMessageStatus(
+            messageId = status.messageId,
+            userId = status.userId,
+            receivedAt = status.receivedAt,
+            readAt = status.readAt
+        )
+    }
+
+    fun mapToMessageStatus(status: RoomMessageStatus): MessageStatus {
+        return MessageStatus(
+            messageId = status.messageId,
+            userId = status.userId,
+            receivedAt = status.receivedAt,
+            readAt = status.readAt
+        )
+    }
+
 
 }

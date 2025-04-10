@@ -94,8 +94,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
                                     timestamp = roomMessage.timestamp,
                                     isEdited = roomMessage.isEdited,
                                     replyToMessageId = roomMessage.replyToMessageId,
-                                    isReadBy = roomMessage.isReadBy,
-                                    isReceivedBy = roomMessage.isReceivedBy
+                                    isReadBy = emptyMap(),
+                                    isReceivedBy = emptyMap()
                                 )
                             } else {
                                 PersonalChatMessageItem.ReceiverTextMessageItem(
@@ -107,8 +107,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
                                     timestamp = roomMessage.timestamp,
                                     isEdited = roomMessage.isEdited,
                                     replyToMessageId = roomMessage.replyToMessageId,
-                                    isReadBy = roomMessage.isReadBy,
-                                    isReceivedBy = roomMessage.isReceivedBy
+                                    isReadBy = emptyMap(),
+                                    isReceivedBy = emptyMap()
                                 )
                             }
                         }
@@ -126,8 +126,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
                                     thumbnailUrl = roomMessage.thumbnailUrl,
                                     isUploaded = roomMessage.isUploaded,
                                     isDownloaded = roomMessage.isDownloaded,
-                                    isReadBy = roomMessage.isReadBy,
-                                    isReceivedBy = roomMessage.isReceivedBy
+                                    isReadBy =emptyMap(),
+                                    isReceivedBy =emptyMap()
                                 )
                             } else {
                                 PersonalChatMessageItem.ReceiverImageMessageItem(
@@ -141,8 +141,8 @@ class PersonalChatRoomViewmodel @Inject constructor(
                                     thumbnailUrl = roomMessage.thumbnailUrl,
                                     isUploaded = roomMessage.isUploaded,
                                     isDownloaded = roomMessage.isDownloaded,
-                                    isReadBy = roomMessage.isReadBy,
-                                    isReceivedBy = roomMessage.isReceivedBy
+                                    isReadBy = emptyMap(),
+                                    isReceivedBy = emptyMap()
                                 )
                             }
                         }

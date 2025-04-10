@@ -51,9 +51,6 @@ class ConversationViewmodel @Inject constructor(
         }
     }
 
-    fun getUnreadMessageCountFlow(conversationId: String): Flow<Int> {
-        return messageRepository.getUnreadMessageCountFlow(conversationId)
-    }
 
     fun setSelection(selectedOption: FilterOption) {
         _filterOptionList.value = _filterOptionList.value.map {

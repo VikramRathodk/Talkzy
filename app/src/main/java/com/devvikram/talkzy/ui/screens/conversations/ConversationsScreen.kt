@@ -58,7 +58,6 @@ fun ConversationsScreen(
             Log.d(TAG, "ConversationsScreen: contact $contact")
             val lastMessage by conversationViewmodel.getLastMessageFlow(conversation.conversationId ).collectAsState(initial = null)
 
-            val unReadMessageCount by conversationViewmodel.getUnreadMessageCountFlow(conversation.conversationId).collectAsState(initial = 0)
 
             val conversationItem = when (conversation.type) {
                 "P" -> {
@@ -66,7 +65,7 @@ fun ConversationsScreen(
                         conversationId = conversation.conversationId,
                         userId = contact?.userId ?: "",
                         name = contact?.name.toString(),
-                        unreadMessageCount = unReadMessageCount,
+                        unreadMessageCount = 0,
                         selected = false,
                         timeStamp = conversation.createdAt,
                         lastMessage = lastMessage,
@@ -77,7 +76,7 @@ fun ConversationsScreen(
                     ConversationItem.GroupConversation(
                         conversationId = conversation.conversationId,
                         groupTitle = conversation.name.toString(),
-                        unreadMessageCount = unReadMessageCount,
+                        unreadMessageCount = 0,
                         participants = conversation.participantIds,
                         selected = false,
                         timeStamp = conversation.createdAt,

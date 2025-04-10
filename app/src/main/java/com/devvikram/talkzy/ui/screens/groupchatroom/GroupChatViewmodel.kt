@@ -17,6 +17,7 @@ import com.devvikram.talkzy.data.room.models.RoomMessage
 import com.devvikram.talkzy.data.room.repository.ContactRepository
 import com.devvikram.talkzy.data.room.repository.ConversationRepository
 import com.devvikram.talkzy.data.room.repository.MessageRepository
+import com.devvikram.talkzy.data.room.repository.MessageStatusRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +37,8 @@ class GroupChatViewmodel @Inject constructor(
     private val messageRepository: MessageRepository,
     private val firestore: FirebaseFirestore,
     private val conversationRepository: ConversationRepository,
-    private val firebaseMessageRepository: FirebaseMessageRepository
+    private val firebaseMessageRepository: FirebaseMessageRepository,
+    private val messageStatusRepository: MessageStatusRepository
 ) : ViewModel() {
 
 
@@ -87,7 +89,15 @@ class GroupChatViewmodel @Inject constructor(
 
         messageRepository.getMessageByConversationIdWithFlow(_conversationId.value)
             .collectLatest { messages ->
+
+
                 _chatMessageList.value = messages.mapNotNull { roomMessage ->
+                    val isReadBy = messageStatusRepository.getReadByFromMessaegeId(roomMessage.messageId)
+                    val isReceivedBy = messageStatusRepository.getReceivedByMesssageId(roomMessage.messageId)
+                    Log.d(TAG, "observeMessages: messageId : ${roomMessage.messageId} ")
+                    Log.d(TAG, "observeMessages: isReadBy : $isReadBy")
+                    Log.d(TAG, "observeMessages: isReceivedBy : $isReceivedBy")
+
                     when (roomMessage.messageType) {
                         MessageType.TEXT.name -> {
                             if (roomMessage.senderId == loginPreference.getUserId()) {
@@ -100,8 +110,8 @@ class GroupChatViewmodel @Inject constructor(
                                     timestamp = roomMessage.timestamp,
                                     isEdited = roomMessage.isEdited,
                                     replyToMessageId = roomMessage.replyToMessageId,
-                                    isReadBy = roomMessage.isReadBy,
-                                    isReceivedBy = roomMessage.isReceivedBy
+                                    isReadBy = emptyMap(),
+                                    isReceivedBy = emptyMap()
                                 )
                             } else {
                                 GroupChatMessageItem.ReceiverTextMessageItem(
@@ -113,8 +123,8 @@ class GroupChatViewmodel @Inject constructor(
                                     timestamp = roomMessage.timestamp,
                                     isEdited = roomMessage.isEdited,
                                     replyToMessageId = roomMessage.replyToMessageId,
-                                    isReadBy = roomMessage.isReadBy,
-                                    isReceivedBy = roomMessage.isReceivedBy
+                                    isReadBy = emptyMap(),
+                                    isReceivedBy = emptyMap()
                                 )
                             }
                         }
@@ -132,8 +142,8 @@ class GroupChatViewmodel @Inject constructor(
                                     thumbnailUrl = roomMessage.thumbnailUrl,
                                     isUploaded = roomMessage.isUploaded,
                                     isDownloaded = roomMessage.isDownloaded,
-                                    isReadBy = roomMessage.isReadBy,
-                                    isReceivedBy = roomMessage.isReceivedBy
+                                    isReadBy = emptyMap(),
+                                    isReceivedBy = emptyMap()
                                 )
                             } else {
                                 GroupChatMessageItem.ReceiverImageMessageItem(
@@ -147,8 +157,8 @@ class GroupChatViewmodel @Inject constructor(
                                     thumbnailUrl = roomMessage.thumbnailUrl,
                                     isUploaded = roomMessage.isUploaded,
                                     isDownloaded = roomMessage.isDownloaded,
-                                    isReadBy = roomMessage.isReadBy,
-                                    isReceivedBy = roomMessage.isReceivedBy
+                                    isReadBy =emptyMap(),
+                                    isReceivedBy = emptyMap()
                                 )
                             }
                         }

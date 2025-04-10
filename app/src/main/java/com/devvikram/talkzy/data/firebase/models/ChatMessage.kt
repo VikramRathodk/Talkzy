@@ -25,12 +25,6 @@ data class ChatMessage(
     @PropertyName("reactions") @JvmField
     val reactions: Map<String, String> = emptyMap(),
 
-    @PropertyName("readBy") @JvmField
-    val isReadBy: Map<String, Long> = emptyMap(),
-
-    @PropertyName("receivedBy") @JvmField
-    val isReceivedBy: Map<String, Long> = emptyMap(),
-
     val mentions: List<String> = emptyList(),
     val replyToMessageId: String? = null,
     val deletedForUsers: List<String> = emptyList(),

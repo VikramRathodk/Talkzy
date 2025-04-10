@@ -21,8 +21,6 @@ data class RoomMessage(
     val mediaDurationInSeconds: Int? = null, // Duration for audio/video files
     val isEdited: Boolean = false,
     val reactions: Map<String, String> = emptyMap(), // Key: userId, Value: emoji
-    val isReadBy: Map<String, Long> = emptyMap(), // Key: userId, Value: read timestamp
-    val isReceivedBy: Map<String, Long> = emptyMap(), // Key: userId, Value: received timestamp
     val mentions: List<String> = emptyList(), // List of userIds who were mentioned
     val replyToMessageId: String? = null, // Message ID being replied to
     val deletedForUsers: List<String> = emptyList(), // List of userIds for whom the message is deleted

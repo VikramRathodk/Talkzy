@@ -40,8 +40,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TalkzyTheme {
-                appViewModel.listenToContacts()
-                appViewModel.listenToConversation()
+
                 AppScreen(modifier = Modifier, viewModel = appViewModel)
             }
         }
@@ -55,6 +54,8 @@ fun AppScreen(modifier: Modifier, viewModel: AppViewModel) {
     val isOnboardingCompleted by viewModel.isOnBoardingCompleted.observeAsState(initial = false)
 
     if (isLoggedIn) {
+        viewModel.listenToContacts()
+        viewModel.listenToConversation()
         AppNavigationScreen(viewModel, navController, modifier)
     } else {
         OnBoardingScreen(viewModel, navController, isOnboardingCompleted)

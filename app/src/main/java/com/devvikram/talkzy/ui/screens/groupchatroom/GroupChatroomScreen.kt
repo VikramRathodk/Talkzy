@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -60,10 +61,18 @@ fun GroupChatroomScreen(
     // Runs only when `conversationId` changes
     LaunchedEffect(conversationId) {
         groupChatViewmodel.setConversationId(conversationId)
+        appViewmodel.setCurrentConversationId(conversationId)
     }
     LaunchedEffect(chatMessageList.value.size) {
         if (chatMessageList.value.isNotEmpty()) {
             listState.animateScrollToItem(chatMessageList.value.lastIndex)
+        }
+    }
+    DisposableEffect(
+        conversationId
+    ) {
+        onDispose {
+            appViewmodel.setCurrentConversationId("")
         }
     }
 
